@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Ngăn người dùng xem danh sách file trong thư mục
+    Options -Indexes
+
+    # Chuyển mọi yêu cầu về index.php nếu file/thư mục không tồn tại
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>

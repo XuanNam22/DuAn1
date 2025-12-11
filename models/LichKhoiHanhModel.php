@@ -1,0 +1,296 @@
+<?php
+class LichKhoiHanhModel extends BaseModel
+{
+    // =========================================================================
+    // PHẦN 1: CÁC HÀM CŨ (ĐƯỢC CẬP NHẬT ĐỂ CHẠY VỚI DB MỚI)
+    // =========================================================================
+
+    // Lấy danh sách tour của HDV (Dashboard HDV)
+    // Cập nhật: Join qua bảng trung gian lich_nhan_vien
+    public function getToursByHdv($hdvId)
+    {
+        $sql = "SELECT lkh.*, t.ten_tour, t.anh_tour, t.so_ngay, lnv.vai_tro
+                FROM lich_khoi_hanh lkh
+                JOIN tours t ON lkh.tour_id = t.id
+                JOIN lich_nhan_vien lnv ON lkh.id = lnv.lich_khoi_hanh_id
+                WHERE lnv.nhan_vien_id = :hdv_id 
+                AND lnv.vai_tro IN ('HDV_chinh', 'HDV_phu') -- Chỉ lấy vai trò HDV
+                ORDER BY lkh.ngay_khoi_hanh ASC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['hdv_id' => $hdvId]);
+        return $stmt->fetchAll();
+    }
+
+    // Đếm tổng số chuyến đi (cho trang Dashboard Admin)
+    public function countAll()
+    {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) as total FROM lich_khoi_hanh");
+        $stmt->execute();
+        $result = $stmt->fetch();
+        return $result['total'];
+    }
+
+    // Danh sách tour hiển thị Admin
+    // Cập nhật: Dùng subquery để lấy tên HDV chính, đảm bảo view cũ không bị lỗi thiếu cột 'ten_hdv'
+    public function getAllToursAdmin()
+    {
+        $sql = "SELECT 
+                    lkh.*, 
+                    t.ten_tour, 
+                    t.so_ngay, 
+                    t.so_dem, 
+                    (SELECT nv.ho_ten FROM lich_nhan_vien lnv 
+                     JOIN huong_dan_vien nv ON lnv.nhan_vien_id = nv.id
+                     WHERE lnv.lich_khoi_hanh_id = lkh.id AND lnv.vai_tro = 'HDV_chinh' LIMIT 1) as ten_hdv
+                FROM lich_khoi_hanh lkh
+                JOIN tours t ON lkh.tour_id = t.id
+                ORDER BY lkh.ngay_khoi_hanh DESC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // 1. Lấy danh sách Tour (cho dropdown)
+    public function getAllToursList() {
+        $stmt = $this->conn->prepare("SELECT id, ten_tour, so_ngay FROM tours"); 
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // 2. Lấy danh sách HDV (cho dropdown cũ - Giữ nguyên logic nhưng lọc theo phân loại mới nếu cần)
+    public function getAllHDVList() {
+        // Vẫn lấy những người có thể làm HDV
+        $stmt = $this->conn->prepare("SELECT id, ho_ten, phan_loai FROM huong_dan_vien WHERE (trang_thai = 'SanSang' OR trang_thai = 'DangBan')");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // [MỚI] Lấy danh sách TOÀN BỘ Nhân sự (Gồm cả HDV, Tài xế, Hậu cần) cho chức năng phân bổ mới
+    public function getAllNhanVienList() {
+        $sql = "SELECT id, ho_ten, phan_loai_nhan_su 
+                FROM huong_dan_vien 
+                WHERE trang_thai IN ('SanSang', 'DangBan') 
+                ORDER BY phan_loai_nhan_su ASC, ho_ten ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // 3. Thêm mới lịch khởi hành (Cập nhật: Bỏ hdv_id và ghi_chu_nhan_su)
+    public function insert($data) {
+        $sql = "INSERT INTO lich_khoi_hanh 
+                (tour_id, ngay_khoi_hanh, ngay_ket_thuc, so_cho_toi_da, diem_tap_trung, trang_thai) 
+                VALUES 
+                (:tour_id, :ngay_khoi_hanh, :ngay_ket_thuc, :so_cho_toi_da, :diem_tap_trung, 'NhanKhach')";
+        
+        // Loại bỏ các key thừa nếu controller cũ lỡ truyền vào
+        unset($data['hdv_id'], $data['ghi_chu_nhan_su']);
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($data);
+        return $this->conn->lastInsertId(); // Trả về ID để controller dùng cho việc add nhân sự
+    }
+
+    // 4. Lấy chi tiết 1 lịch trình
+    public function getDetail($id) {
+        $sql = "SELECT l.*, t.ten_tour, t.so_ngay 
+                FROM lich_khoi_hanh l
+                JOIN tours t ON l.tour_id = t.id
+                WHERE l.id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    // 5. Cập nhật lịch trình (Cập nhật: Bỏ hdv_id và ghi_chu_nhan_su)
+    public function update($id, $data) {
+        $sql = "UPDATE lich_khoi_hanh 
+                SET tour_id = :tour_id, 
+                    ngay_khoi_hanh = :ngay_khoi_hanh, 
+                    ngay_ket_thuc = :ngay_ket_thuc, 
+                    so_cho_toi_da = :so_cho_toi_da,
+                    diem_tap_trung = :diem_tap_trung,
+                    trang_thai = :trang_thai 
+                WHERE id = :id";
+        
+        $stmt = $this->conn->prepare($sql);
+        $data['id'] = $id; 
+        unset($data['hdv_id'], $data['ghi_chu_nhan_su']); 
+        return $stmt->execute($data);
+    }
+
+    // 6. Xóa lịch trình
+    public function delete($id) {
+        $sql = "DELETE FROM lich_khoi_hanh WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
+
+    // Các hàm phụ trợ (Giữ nguyên)
+    public function getOpenSchedules() {
+        $sql = "SELECT lkh.*, t.ten_tour, t.gia_nguoi_lon, t.gia_tre_em 
+                FROM lich_khoi_hanh lkh
+                JOIN tours t ON lkh.tour_id = t.id
+                WHERE lkh.trang_thai = 'NhanKhach' 
+                AND lkh.ngay_khoi_hanh > NOW()
+                ORDER BY lkh.ngay_khoi_hanh ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function updateSoCho($id, $soLuongKhach) {
+        $sql = "UPDATE lich_khoi_hanh 
+                SET so_cho_da_dat = so_cho_da_dat + :so_luong 
+                WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute(['so_luong' => $soLuongKhach, 'id' => $id]);
+    }
+
+    public function checkSeatAvailability($lich_id, $so_luong_khach) {
+        $sql = "SELECT (so_cho_toi_da - so_cho_da_dat) as cho_trong 
+                FROM lich_khoi_hanh 
+                WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['id' => $lich_id]);
+        $result = $stmt->fetch();
+        
+        if ($result && $result['cho_trong'] >= $so_luong_khach) {
+            return true; 
+        }
+        return false; 
+    }
+    
+    // =========================================================================
+    // PHẦN 2: [MỚI] QUẢN LÝ PHÂN BỔ NHÂN VIÊN (Dùng bảng trung gian)
+    // =========================================================================
+
+    // Lấy danh sách nhân viên đã phân bổ
+    public function getAssignedStaff($lich_id) {
+        $sql = "SELECT lnv.*, nv.ho_ten, nv.sdt, nv.phan_loai_nhan_su
+                FROM lich_nhan_vien lnv
+                JOIN huong_dan_vien nv ON lnv.nhan_vien_id = nv.id
+                WHERE lnv.lich_khoi_hanh_id = :id
+                ORDER BY lnv.vai_tro ASC, nv.ho_ten ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['id' => $lich_id]);
+        return $stmt->fetchAll();
+    }
+
+    // Thêm nhân viên vào chuyến
+    public function assignStaff($lich_id, $nhan_vien_id, $vai_tro) {
+        $sql = "INSERT INTO lich_nhan_vien (lich_khoi_hanh_id, nhan_vien_id, vai_tro)
+                VALUES (:lich_id, :nv_id, :vai_tro)";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([
+            ':lich_id' => $lich_id,
+            ':nv_id' => $nhan_vien_id,
+            ':vai_tro' => $vai_tro
+        ]);
+    }
+
+    // Xóa phân bổ
+    public function unassignStaff($id) {
+        $stmt = $this->conn->prepare("DELETE FROM lich_nhan_vien WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+
+    // Check trùng lịch (Logic mới dùng bảng lich_nhan_vien)
+    // Thay thế cho checkHdvAvailability cũ
+    public function checkStaffAvailability($nhan_vien_id, $startDate, $endDate, $vai_tro) {
+        if ($vai_tro === 'HauCan') return true; // Hậu cần không check trùng
+
+        $sql = "SELECT COUNT(*) as count 
+                FROM lich_nhan_vien lnv
+                JOIN lich_khoi_hanh lkh ON lnv.lich_khoi_hanh_id = lkh.id
+                WHERE lnv.nhan_vien_id = :nv_id 
+                AND lnv.vai_tro IN ('HDV_chinh', 'HDV_phu', 'TaiXe')
+                AND lkh.trang_thai != 'Huy' 
+                AND (
+                    (lkh.ngay_khoi_hanh <= :end_date AND lkh.ngay_ket_thuc >= :start_date)
+                )";
+
+        $stmt = $this->conn->prepare($sql);
+        
+        $params = [
+            ':nv_id' => $nhan_vien_id,
+            ':start_date' => $startDate,
+            ':end_date' => $endDate
+        ];
+
+        $stmt->execute($params);
+        $result = $stmt->fetch();
+
+        return $result['count'] == 0; 
+    }
+    
+    // =========================================================================
+    // PHẦN 3: QUẢN LÝ DỊCH VỤ (Giữ nguyên từ bước trước)
+    // =========================================================================
+    
+    public function getServices($lich_id) {
+        $sql = "SELECT dv.*, ncc.ten_ncc, ncc.sdt, ncc.dich_vu as linh_vuc_ncc
+                FROM lich_dich_vu dv
+                JOIN nha_cung_cap ncc ON dv.ncc_id = ncc.id
+                WHERE dv.lich_khoi_hanh_id = :id
+                ORDER BY dv.ngay_su_dung ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['id' => $lich_id]);
+        return $stmt->fetchAll();
+    }
+
+    public function addService($data) {
+        $sql = "INSERT INTO lich_dich_vu (lich_khoi_hanh_id, ncc_id, loai_dich_vu, ngay_su_dung, so_luong, ghi_chu)
+                VALUES (:lich_id, :ncc_id, :loai_dv, :ngay_sd, :sl, :ghi_chu)";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute($data);
+    }
+
+    public function deleteService($id) {
+        $stmt = $this->conn->prepare("DELETE FROM lich_dich_vu WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+    
+    public function getServiceDetail($id) {
+        $sql = "SELECT * FROM lich_dich_vu WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function updateService($id, $data) {
+        $sql = "UPDATE lich_dich_vu 
+                SET ncc_id = :ncc_id, 
+                    loai_dich_vu = :loai_dv, 
+                    ngay_su_dung = :ngay_sd, 
+                    so_luong = :sl, 
+                    ghi_chu = :ghi_chu
+                WHERE id = :id";
+        
+        $data['id'] = $id; 
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute($data);
+    }
+
+    public function getDetailForHdv($lichId) {
+        $sql = "SELECT lkh.*, t.ten_tour, t.lich_trinh, t.luu_y, t.id as tour_id 
+                FROM lich_khoi_hanh lkh
+                JOIN tours t ON lkh.tour_id = t.id
+                WHERE lkh.id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['id' => $lichId]);
+        return $stmt->fetch();
+    }
+
+    public function getTourItinerary($tourId) {
+        $sql = "SELECT * FROM tour_itineraries 
+                WHERE tour_id = :tour_id 
+                ORDER BY ngay_thu ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute(['tour_id' => $tourId]);
+        return $stmt->fetchAll();
+    }
+}
+?>
