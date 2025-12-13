@@ -8,10 +8,21 @@
 <body class="bg-light">
 <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="text-primary fw-bold">👥 Danh Sách Nhân Sự</h3>
+        <h3 class="text-primary fw-bold">
+            <?= (isset($isTrash) && $isTrash) ? '<i class="bi bi-trash"></i> Thùng Rác Nhân Sự' : '👥 Danh Sách Nhân Sự' ?>
+        </h3>
         <div>
-            <a href="<?= BASE_URL ?>routes/index.php?action=admin-dashboard" class="btn btn-secondary">Dashboard</a>
-            <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-create" class="btn btn-success">+ Thêm Mới</a>
+            <?php if (isset($isTrash) && $isTrash): ?>
+                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guides" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                </a>
+            <?php else: ?>
+                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guides&view=trash" class="btn btn-warning me-2">
+                    <i class="bi bi-trash"></i> Thùng rác
+                </a>
+                <a href="<?= BASE_URL ?>routes/index.php?action=admin-dashboard" class="btn btn-secondary me-2">Dashboard</a>
+                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-create" class="btn btn-success">+ Thêm Mới</a>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -19,6 +30,11 @@
         <div class="card-body py-2">
             <form action="<?= BASE_URL ?>routes/index.php" method="GET" class="row g-2 align-items-center">
                 <input type="hidden" name="action" value="admin-guides">
+                
+                <?php if (isset($isTrash) && $isTrash): ?>
+                    <input type="hidden" name="view" value="trash">
+                <?php endif; ?>
+
                 <div class="col-md-4">
                     <input type="text" name="keyword" class="form-control" placeholder="Tìm tên, email..." value="<?= htmlspecialchars($filters['keyword'] ?? '') ?>">
                 </div>
@@ -46,7 +62,7 @@
                         <th>Họ Tên / Email</th>
                         <th>Vai Trò</th>
                         <th>Trạng Thái</th>
-                        <th width="150" class="text-center">Hành Động</th>
+                        <th width="200" class="text-center">Hành Động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,9 +96,19 @@
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-detail&id=<?= $g['id'] ?>" class="btn btn-sm btn-info text-white"><i class="bi bi-eye"></i></a>
-                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-edit&id=<?= $g['id'] ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
-                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-delete&id=<?= $g['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Xóa?')"><i class="bi bi-trash"></i></a>
+                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-detail&id=<?= $g['id'] ?>" class="btn btn-sm btn-info text-white" title="Xem chi tiết"><i class="bi bi-eye"></i></a>
+                                
+                                <?php if (isset($isTrash) && $isTrash): ?>
+                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-restore&id=<?= $g['id'] ?>" 
+                                       class="btn btn-sm btn-success" 
+                                       onclick="return confirm('Bạn có chắc muốn khôi phục nhân sự này?')"
+                                       title="Khôi phục lại danh sách">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Khôi phục
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-edit&id=<?= $g['id'] ?>" class="btn btn-sm btn-warning" title="Sửa thông tin"><i class="bi bi-pencil"></i></a>
+                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-guide-delete&id=<?= $g['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Xóa tạm thời vào thùng rác?')" title="Xóa"><i class="bi bi-trash"></i></a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>

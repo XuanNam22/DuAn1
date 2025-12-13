@@ -11,8 +11,6 @@ match ($action) {
     'check-login'       => (new AuthController)->handleLogin(),
     'logout'            => (new AuthController)->logout(),
     
-    // === PHẦN CẦN SỬA ===
-    
     // Route cho Admin
     'admin-dashboard'   => (new DashboardController)->index(),
 
@@ -60,6 +58,7 @@ match ($action) {
     'admin-guide-edit'   => (new GuideManagerController)->edit(),
     'admin-guide-update' => (new GuideManagerController)->update(),
     'admin-guide-delete' => (new GuideManagerController)->delete(),
+    'admin-guide-restore'=> (new GuideManagerController)->restore(), 
     'admin-guide-detail' => (new GuideManagerController)->detail(),
 
     // Routes Quản Lý Nhà Cung Cấp
@@ -90,7 +89,7 @@ match ($action) {
     'hdv-save-diem-danh'  => (new HdvController)->saveDiemDanh(),
     'hdv-delete-phien-dd' => (new HdvController)->deletePhienDiemDanh(),
 
-    // [MỚI THÊM] Route cho chức năng Cập nhật Ghi chú Đặc biệt
+    // Route cho chức năng Cập nhật Ghi chú Đặc biệt
     'hdv-update-khach-note' => (new HdvController)->updateYeuCauDacBiet(),
 
     'admin-tour-delete-image' => (new TourController)->deleteGalleryImage(),

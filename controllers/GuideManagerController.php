@@ -10,18 +10,23 @@ class GuideManagerController extends BaseController {
     public function index() {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
         
+        // Kiểm tra xem user có muốn xem thùng rác không
+        $isTrash = isset($_GET['view']) && $_GET['view'] === 'trash';
+
         $filters = [
             'keyword'    => $_GET['keyword'] ?? '',
             'phan_loai'  => $_GET['phan_loai'] ?? '',
             'role'       => $_GET['role'] ?? '',
-            'trang_thai' => $_GET['trang_thai'] ?? ''
+            'trang_thai' => $_GET['trang_thai'] ?? '',
+            'view_trash' => $isTrash // Truyền tham số này sang Model
         ];
         
         $guides = $this->guideModel->getAll($filters);
         
         $this->render('pages/admin/guides/index', [
             'guides' => $guides, 
-            'filters' => $filters
+            'filters' => $filters,
+            'isTrash' => $isTrash // Truyền biến $isTrash sang View
         ]);
     }
 
@@ -34,20 +39,17 @@ class GuideManagerController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email']);
             
-            // 1. Check trùng Email
             if ($this->guideModel->checkEmailExists($email)) {
                 echo "<script>alert('Lỗi: Email này đã tồn tại!'); window.history.back();</script>";
                 return;
             }
 
-            // 2. Upload ảnh
             $anh = 'default_avatar.png';
             if (isset($_FILES['anh_dai_dien']) && $_FILES['anh_dai_dien']['error'] == 0) {
                 $uploaded = $this->uploadImage($_FILES['anh_dai_dien']);
                 if ($uploaded) $anh = $uploaded;
             }
 
-            // 3. Hash mật khẩu (Đã có từ bước trước)
             $mat_khau_hash = password_hash($_POST['mat_khau'], PASSWORD_DEFAULT);
 
             $data = [
@@ -99,7 +101,6 @@ class GuideManagerController extends BaseController {
                 $newImg = $this->uploadImage($_FILES['anh_dai_dien']);
                 if ($newImg) {
                     $anh = $newImg;
-                    // Xóa ảnh cũ
                     if ($oldInfo['anh_dai_dien'] != 'default_avatar.png') {
                         $oldPath = 'assets/uploads/hdv/' . $oldInfo['anh_dai_dien'];
                         if (file_exists($oldPath)) unlink($oldPath);
@@ -107,7 +108,6 @@ class GuideManagerController extends BaseController {
                 }
             }
 
-            // Chỉ đổi mật khẩu nếu nhập mới
             $mat_khau_update = '';
             if (!empty($_POST['mat_khau_moi'])) {
                 $mat_khau_update = password_hash($_POST['mat_khau_moi'], PASSWORD_DEFAULT);
@@ -134,16 +134,21 @@ class GuideManagerController extends BaseController {
         }
     }
 
-    // [QUAN TRỌNG] Hàm xóa đã được sửa lại cho Soft Delete
     public function delete() {
         $id = $_GET['id'] ?? 0;
         
-        // [THAY ĐỔI] Đã bỏ đoạn code xóa ảnh vật lý (unlink)
-        // Vì đây là xóa mềm, chúng ta cần giữ lại ảnh để có thể khôi phục sau này
-        
-        $this->guideModel->delete($id); // Model sẽ cập nhật deleted_at
+        $this->guideModel->delete($id);
         
         header('Location: ' . BASE_URL . 'routes/index.php?action=admin-guides&msg=deleted');
+    }
+
+    public function restore() {
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
+
+        $id = $_GET['id'] ?? 0;
+        $this->guideModel->restore($id);
+        
+        header('Location: ' . BASE_URL . 'routes/index.php?action=admin-guides&view=trash&msg=restored');
     }
 
     public function detail() {
@@ -155,7 +160,7 @@ class GuideManagerController extends BaseController {
     }
 
     private function uploadImage($file) {
-        $targetDir = "assets/uploads/hdv/"; // Thư mục ảnh HDV
+        $targetDir = "assets/uploads/hdv/";
         if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
         $fileName = time() . "_" . basename($file["name"]);
         if (move_uploaded_file($file["tmp_name"], $targetDir . $fileName)) return $fileName;

@@ -1,11 +1,18 @@
 <?php
 class GuideModel extends BaseModel
 {
-    // Lấy danh sách nhân sự (Có bộ lọc)
+    // Lấy danh sách nhân sự (Có bộ lọc + Chế độ xem thùng rác)
     public function getAll($filters = [])
     {
-        // [THAY ĐỔI] Chỉ lấy những bản ghi chưa bị xóa mềm (deleted_at là NULL)
-        $sql = "SELECT * FROM huong_dan_vien WHERE deleted_at IS NULL";
+        // 1. Xác định điều kiện lọc: Mặc định là lấy người CHƯA xóa
+        $whereCondition = "deleted_at IS NULL";
+
+        // Nếu có cờ 'view_trash' = true thì lấy người ĐÃ xóa
+        if (isset($filters['view_trash']) && $filters['view_trash'] == true) {
+            $whereCondition = "deleted_at IS NOT NULL";
+        }
+
+        $sql = "SELECT * FROM huong_dan_vien WHERE $whereCondition";
         $params = [];
 
         if (!empty($filters['keyword'])) {
@@ -41,7 +48,7 @@ class GuideModel extends BaseModel
         return $stmt->fetch();
     }
 
-    // [MỚI] Kiểm tra trùng Email (Tránh lỗi duplicate entry)
+    // Kiểm tra trùng Email
     public function checkEmailExists($email, $excludeId = null) {
         $sql = "SELECT COUNT(*) FROM huong_dan_vien WHERE email = :email";
         $params = ['email' => $email];
@@ -70,7 +77,6 @@ class GuideModel extends BaseModel
                     kinh_nghiem=:kinh_nghiem, suc_khoe=:suc_khoe, 
                     phan_loai=:phan_loai, phan_loai_nhan_su=:role, trang_thai=:trang_thai";
         
-        // Chỉ update mật khẩu nếu có nhập mới
         if (!empty($data['mat_khau'])) {
             $sql .= ", mat_khau=:mat_khau";
         }
@@ -83,13 +89,20 @@ class GuideModel extends BaseModel
     }
 
     public function delete($id) {
-        // [THAY ĐỔI] Không dùng DELETE nữa, chuyển sang UPDATE thời gian xóa
+        // Xóa mềm: Cập nhật thời gian xóa
         $sql = "UPDATE huong_dan_vien SET deleted_at = NOW() WHERE id = :id";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
 
-    // Lấy lịch sử dẫn tour của nhân sự này
+    // [MỚI] Hàm khôi phục nhân sự đã xóa
+    public function restore($id) {
+        // Set deleted_at về NULL để nhân viên xuất hiện trở lại
+        $sql = "UPDATE huong_dan_vien SET deleted_at = NULL WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
+
     public function getHistory($hdv_id) {
         $sql = "SELECT lkh.*, t.ten_tour 
                 FROM lich_khoi_hanh lkh
