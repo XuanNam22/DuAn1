@@ -173,19 +173,9 @@
                                                     Chi tiết
                                                 </a>
 
-                                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-services&id=<?= $tour['id'] ?>"
-                                                    class="btn btn-sm btn-outline-primary" title="Điều hành Dịch vụ (Xe, KS)">
-                                                    Điều hành
-                                                </a>
-
                                                 <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-staff&id=<?= $tour['id'] ?>"
-                                                    class="btn btn-sm btn-outline-warning text-dark" title="Phân bổ Nhân sự (HDV, Tài xế)">
-                                                    Phân bổ
-                                                </a>
-
-                                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-edit-lich&id=<?= $tour['id'] ?>"
-                                                    class="btn btn-sm btn-outline-secondary" title="Sửa thông tin">
-                                                    Sửa
+                                                    class="btn btn-sm btn-outline-warning text-dark" title="Sửa & Phân bổ Nhân sự">
+                                                    Sửa / Phân công
                                                 </a>
 
                                                 <a href="<?= BASE_URL ?>routes/index.php?action=admin-delete-lich&id=<?= $tour['id'] ?>"

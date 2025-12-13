@@ -7,7 +7,7 @@ class LichKhoiHanhModel extends BaseModel
                 JOIN tours t ON lkh.tour_id = t.id
                 JOIN lich_nhan_vien lnv ON lkh.id = lnv.lich_khoi_hanh_id
                 WHERE lnv.nhan_vien_id = :hdv_id 
-                AND lnv.vai_tro IN ('HDV_chinh', 'HDV_phu') -- Chỉ lấy vai trò HDV
+                AND lnv.vai_tro IN ('HDV_chinh', 'HDV_phu') 
                 ORDER BY lkh.ngay_khoi_hanh ASC";
 
         $stmt = $this->conn->prepare($sql);
@@ -43,13 +43,14 @@ class LichKhoiHanhModel extends BaseModel
         return $stmt->fetchAll();
     }
     public function getAllHDVList() {
-        // Vẫn lấy những người có thể làm HDV
         $stmt = $this->conn->prepare("SELECT id, ho_ten, phan_loai FROM huong_dan_vien WHERE (trang_thai = 'SanSang' OR trang_thai = 'DangBan')");
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    // [ĐÃ SỬA] Thêm cột sdt vào câu lệnh SELECT để View hiển thị được
     public function getAllNhanVienList() {
-        $sql = "SELECT id, ho_ten, phan_loai_nhan_su 
+        $sql = "SELECT id, ho_ten, phan_loai_nhan_su, sdt 
                 FROM huong_dan_vien 
                 WHERE trang_thai IN ('SanSang', 'DangBan') 
                 ORDER BY phan_loai_nhan_su ASC, ho_ten ASC";
@@ -57,18 +58,18 @@ class LichKhoiHanhModel extends BaseModel
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
     public function insert($data) {
         $sql = "INSERT INTO lich_khoi_hanh 
                 (tour_id, ngay_khoi_hanh, ngay_ket_thuc, so_cho_toi_da, diem_tap_trung, trang_thai) 
                 VALUES 
                 (:tour_id, :ngay_khoi_hanh, :ngay_ket_thuc, :so_cho_toi_da, :diem_tap_trung, 'NhanKhach')";
         
-        // Loại bỏ các key thừa nếu controller cũ lỡ truyền vào
         unset($data['hdv_id'], $data['ghi_chu_nhan_su']);
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($data);
-        return $this->conn->lastInsertId(); // Trả về ID để controller dùng cho việc add nhân sự
+        return $this->conn->lastInsertId(); 
     }
     public function getDetail($id) {
         $sql = "SELECT l.*, t.ten_tour, t.so_ngay 
@@ -118,7 +119,6 @@ class LichKhoiHanhModel extends BaseModel
         return $stmt->fetchAll();
     }
     public function updateSoCho($id, $soLuongKhach) {
-        // Cập nhật số chỗ (có thể cộng hoặc trừ)
         $sql = "UPDATE lich_khoi_hanh 
                 SET so_cho_da_dat = so_cho_da_dat + :so_luong 
                 WHERE id = :id";
