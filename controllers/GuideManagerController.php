@@ -101,6 +101,7 @@ class GuideManagerController extends BaseController {
                 $newImg = $this->uploadImage($_FILES['anh_dai_dien']);
                 if ($newImg) {
                     $anh = $newImg;
+                    // Xóa ảnh cũ
                     if ($oldInfo['anh_dai_dien'] != 'default_avatar.png') {
                         $oldPath = 'assets/uploads/hdv/' . $oldInfo['anh_dai_dien'];
                         if (file_exists($oldPath)) unlink($oldPath);
@@ -108,21 +109,23 @@ class GuideManagerController extends BaseController {
                 }
             }
 
+            // Chỉ đổi mật khẩu nếu nhập mới
             $mat_khau_update = '';
             if (!empty($_POST['mat_khau_moi'])) {
                 $mat_khau_update = password_hash($_POST['mat_khau_moi'], PASSWORD_DEFAULT);
             }
 
+            // [ĐÃ SỬA] Thêm ?? '' vào các trường không bắt buộc để tránh lỗi Undefined array key
             $data = [
                 'ho_ten' => $_POST['ho_ten'],
                 'ngay_sinh' => $_POST['ngay_sinh'],
                 'email' => $email,
                 'sdt' => $_POST['sdt'],
                 'anh' => $anh,
-                'ngon_ngu' => $_POST['ngon_ngu'],
-                'chung_chi' => $_POST['chung_chi'],
-                'kinh_nghiem' => $_POST['kinh_nghiem'],
-                'suc_khoe' => $_POST['suc_khoe'],
+                'ngon_ngu' => $_POST['ngon_ngu'] ?? '', 
+                'chung_chi' => $_POST['chung_chi'] ?? '',
+                'kinh_nghiem' => $_POST['kinh_nghiem'] ?? '',
+                'suc_khoe' => $_POST['suc_khoe'] ?? '',
                 'phan_loai' => $_POST['phan_loai'],
                 'role' => $_POST['phan_loai_nhan_su'],
                 'trang_thai' => $_POST['trang_thai'],

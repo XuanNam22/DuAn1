@@ -77,8 +77,13 @@ class GuideModel extends BaseModel
                     kinh_nghiem=:kinh_nghiem, suc_khoe=:suc_khoe, 
                     phan_loai=:phan_loai, phan_loai_nhan_su=:role, trang_thai=:trang_thai";
         
+        // Chỉ update mật khẩu nếu có nhập mới
         if (!empty($data['mat_khau'])) {
             $sql .= ", mat_khau=:mat_khau";
+        } else {
+            // [QUAN TRỌNG] Nếu không có mật khẩu mới, PHẢI XÓA key này khỏi mảng data
+            // Nếu không xóa, PDO sẽ báo lỗi vì truyền thừa tham số :mat_khau
+            unset($data['mat_khau']);
         }
         
         $sql .= " WHERE id=:id";
