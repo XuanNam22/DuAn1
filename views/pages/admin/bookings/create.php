@@ -9,7 +9,7 @@
             border-bottom: 2px solid #e9ecef;
             padding-bottom: 10px;
             margin-bottom: 20px;
-            color: #d63384; /* Màu thương hiệu hoặc màu nổi */
+            color: #d63384;
             font-weight: bold;
         }
     </style>
@@ -34,13 +34,15 @@
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">Chọn Tour - Lịch Khởi Hành (*)</label>
-                                <select name="lich_khoi_hanh_id" class="form-select border border-secondary p-2" required>
-                                    <option value="">-- Chọn chuyến đi --</option>
+                                <select name="lich_khoi_hanh_id" id="select_tour" class="form-select border border-secondary p-2" required onchange="calculatePrice()">
+                                    <option value="" data-price-adult="0" data-price-child="0">-- Chọn chuyến đi --</option>
                                     <?php if(isset($schedules) && is_array($schedules)): ?>
                                         <?php foreach ($schedules as $item): ?>
-                                            <option value="<?= $item['id'] ?>">
+                                            <option value="<?= $item['id'] ?>" 
+                                                    data-price-adult="<?= $item['gia_nguoi_lon'] ?>"
+                                                    data-price-child="<?= $item['gia_tre_em'] ?>">
                                                 <?= $item['ten_tour'] ?> | 
-                                                <?= date('d/m/Y', strtotime($item['ngay_khoi_hanh'])) ?> | 
+                                                <?= date('d/m/Y', strtotime($item['ngay_khoi_hanh'])) ?> 
                                                 (Còn <?= $item['so_cho_toi_da'] - $item['so_cho_da_dat'] ?> chỗ)
                                             </option>
                                         <?php endforeach; ?>
@@ -83,7 +85,7 @@
                                 </thead>
                                 <tbody>
                                     <tr class="member-row">
-                                        <td class="text-center fw-bold">1</td>
+                                        <td class="text-center fw-bold row-index">1</td>
                                         <td><input type="text" name="members[0][name]" class="form-control form-control-sm border ps-2" placeholder="Nhập họ tên" required></td>
                                         <td>
                                             <select name="members[0][gender]" class="form-select form-select-sm border ps-2">
@@ -120,7 +122,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold text-danger">Tổng Tiền Dự Kiến (VNĐ)</label>
-                                <input type="number" name="tong_tien" class="form-control border border-danger p-2 fw-bold text-danger" placeholder="Nhập số tiền...">
+                                <input type="number" name="tong_tien" id="inp_tong_tien" class="form-control border border-danger p-2 fw-bold text-danger fs-5" placeholder="0" readonly>
+                                <small class="text-muted fst-italic">*Đã tự động tính theo đơn giá tour</small>
                             </div>
                         </div>
 
@@ -136,7 +139,7 @@
 </div>
 
 <script>
-    let memberIndex = 1; // Bắt đầu từ 1 vì 0 là dòng đầu tiên
+    let memberIndex = 1;
 
     function addMemberRow() {
         const tableBody = document.querySelector('#membersTable tbody');
@@ -169,16 +172,15 @@
         tableBody.appendChild(row);
         memberIndex++;
         updateRowNumbers();
-        updateTotal();
+        updateTotal(); 
     }
 
     function removeMemberRow(btn) {
         btn.closest('tr').remove();
         updateRowNumbers();
-        updateTotal();
+        updateTotal(); 
     }
 
-    // Cập nhật số thứ tự (STT) sau khi xóa
     function updateRowNumbers() {
         const rows = document.querySelectorAll('.member-row');
         rows.forEach((row, index) => {
@@ -186,7 +188,6 @@
         });
     }
 
-    // Tính tổng người lớn / trẻ em
     function updateTotal() {
         let adults = 0;
         let children = 0;
@@ -197,16 +198,29 @@
             else children++;
         });
 
-        // Hiển thị ra màn hình
         document.getElementById('display_adults').textContent = `${adults} Người lớn`;
         document.getElementById('display_children').textContent = `${children} Trẻ em`;
-
-        // Gán vào input hidden để gửi đi
         document.getElementById('inp_so_nguoi_lon').value = adults;
         document.getElementById('inp_so_tre_em').value = children;
+
+        calculatePrice();
     }
 
-    // Chạy lần đầu để đánh số STT dòng 1
+    function calculatePrice() {
+        const selectTour = document.getElementById('select_tour');
+        const selectedOption = selectTour.options[selectTour.selectedIndex];
+
+        const priceAdult = parseFloat(selectedOption.getAttribute('data-price-adult')) || 0;
+        const priceChild = parseFloat(selectedOption.getAttribute('data-price-child')) || 0;
+
+        const countAdult = parseInt(document.getElementById('inp_so_nguoi_lon').value) || 0;
+        const countChild = parseInt(document.getElementById('inp_so_tre_em').value) || 0;
+
+        const total = (countAdult * priceAdult) + (countChild * priceChild);
+
+        document.getElementById('inp_tong_tien').value = total;
+    }
+
     updateRowNumbers();
 </script>
 
