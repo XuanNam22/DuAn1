@@ -2,10 +2,12 @@
 class TourController extends BaseController {
     private $tourModel;
     private $supplierModel;
+    private $lichModel; // [MỚI] Khai báo model Lịch Khởi Hành
 
     public function __construct() {
         $this->tourModel = new TourModel();
         $this->supplierModel = new SupplierModel();
+        $this->lichModel = new LichKhoiHanhModel(); // [MỚI] Khởi tạo model
     }
 
     public function index() {
@@ -22,7 +24,7 @@ class TourController extends BaseController {
         ]);
     }
 
-    // [NÂNG CẤP] Sử dụng Transaction để đảm bảo toàn vẹn dữ liệu
+    // Sử dụng Transaction để đảm bảo toàn vẹn dữ liệu
     public function store() {
         // 1. Upload ảnh đại diện trước
         $anh_tour = '';
@@ -142,7 +144,7 @@ class TourController extends BaseController {
             // Upload ảnh mới
             $anh_tour = $this->uploadImage($_FILES['anh_tour']);
             
-            // [FIX] Xóa ảnh cũ đi để tiết kiệm bộ nhớ
+            // Xóa ảnh cũ đi để tiết kiệm bộ nhớ
             if (!empty($_POST['anh_cu'])) {
                 $oldFile = "assets/uploads/" . $_POST['anh_cu'];
                 if (file_exists($oldFile)) unlink($oldFile);
@@ -217,7 +219,7 @@ class TourController extends BaseController {
         }
     }
 
-    // [MỚI] Hàm xóa ảnh trong thư viện (Gallery)
+    // Hàm xóa ảnh trong thư viện (Gallery)
     public function deleteGalleryImage() {
         $imageId = $_GET['image_id'] ?? 0;
         $tourId = $_GET['tour_id'] ?? 0;
@@ -238,7 +240,7 @@ class TourController extends BaseController {
         header("Location: index.php?action=admin-tour-edit&id=$tourId#gallery");
     }
 
-    // [NÂNG CẤP] Xóa tour và xóa sạch ảnh liên quan
+    // Xóa tour và xóa sạch ảnh liên quan
     public function delete() {
         $id = $_GET['id'];
         
@@ -261,15 +263,94 @@ class TourController extends BaseController {
         header('Location: index.php?action=admin-tours&msg=deleted');
     }
 
-    // Helper: Upload file an toàn hơn
+    // =========================================================================
+    // [PHẦN MỚI] QUẢN LÝ LỊCH TRÌNH & PHÂN CÔNG NHÂN SỰ
+    // =========================================================================
+
+    // 1. Hiển thị form sửa lịch & phân công (Mapping với action: admin-schedule-staff)
+    public function editSchedule() {
+        $id = $_GET['id'] ?? 0;
+        
+        // Lấy chi tiết lịch
+        $lich = $this->lichModel->getDetail($id);
+        if (!$lich) {
+            die("Lịch trình không tồn tại!");
+        }
+
+        // Lấy danh sách tất cả Tours (để hiện trong dropdown chọn tour)
+        $tours = $this->tourModel->getAll();
+
+        // Lấy danh sách nhân sự ĐÃ phân công cho lịch này
+        $assignedStaff = $this->lichModel->getAssignedStaff($id);
+
+        // Lấy danh sách TẤT CẢ nhân sự (để hiện trong dropdown thêm mới)
+        $allStaff = $this->lichModel->getAllNhanVienList();
+
+        // Render view form_sua_lich.php
+        $this->render('pages/admin/form_sua_lich', [
+            'lich' => $lich,
+            'tours' => $tours,
+            'assignedStaff' => $assignedStaff,
+            'allStaff' => $allStaff
+        ]);
+    }
+
+    // 2. Cập nhật thông tin lịch trình (Mapping với action: admin-update-lich)
+    public function updateSchedule() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = $_POST['id'];
+            $data = [
+                'tour_id' => $_POST['tour_id'],
+                'ngay_khoi_hanh' => $_POST['ngay_khoi_hanh'],
+                'ngay_ket_thuc' => $_POST['ngay_ket_thuc'],
+                'so_cho_toi_da' => $_POST['so_cho_toi_da'],
+                'diem_tap_trung' => $_POST['diem_tap_trung'],
+                'trang_thai' => $_POST['trang_thai']
+            ];
+
+            if ($this->lichModel->update($id, $data)) {
+                $msg = 'updated';
+            } else {
+                $msg = 'error';
+            }
+            header("Location: index.php?action=admin-schedule-staff&id=$id&msg=$msg");
+        }
+    }
+
+    public function addStaff() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $lichId = $_POST['lich_id'];
+            $nhanVienId = $_POST['nhan_vien_id'];
+            $vaiTro = $_POST['vai_tro'];
+
+            if ($this->lichModel->assignStaff($lichId, $nhanVienId, $vaiTro)) {
+                $msg = 'Staff assigned successfully';
+            } else {
+                $msg = 'Error assigning staff';
+            }
+            header("Location: index.php?action=admin-schedule-staff&id=$lichId&msg=$msg");
+        }
+    }
+
+    public function removeStaff() {
+        $id = $_GET['id'] ?? 0;
+        $lichId = $_GET['lich_id'] ?? 0;
+
+        if ($this->lichModel->unassignStaff($id)) {
+            $msg = 'Staff removed';
+        } else {
+            $msg = 'Error removing staff';
+        }
+        header("Location: index.php?action=admin-schedule-staff&id=$lichId&msg=$msg");
+    }
+
     private function uploadImage($file) {
-        $targetDir = "assets/uploads/"; // Đã sửa đường dẫn cho đúng root
-        // Kiểm tra extension
+        $targetDir = "assets/uploads/"; 
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         
         if (!in_array($ext, $allowed)) {
-            return false; // File không hợp lệ
+            return false; 
         }
 
         if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);

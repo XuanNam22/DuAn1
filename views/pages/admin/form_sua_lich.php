@@ -2,68 +2,86 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Sửa Lịch Khởi Hành</title>
+    <title>Sửa Lịch Khởi Hành & Phân Công</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .section-title {
+            border-bottom: 2px solid #ffc107;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <div class="container mt-5 mb-5">
+        
+        <?php if (isset($_GET['msg'])): ?>
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="bi bi-check-circle"></i> <?= htmlspecialchars($_GET['msg']) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="bi bi-exclamation-triangle"></i> <?= htmlspecialchars($_GET['error']) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <div class="card shadow">
                     <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">✏️ Cập Nhật Lịch Trình #<?= $lich['id'] ?></h4>
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square"></i> Quản Lý Chuyến Đi #<?= $lich['id'] ?></h5>
                         <a href="<?= BASE_URL ?>routes/index.php?action=admin-dashboard" class="btn btn-sm btn-dark">
                             <i class="bi bi-arrow-left"></i> Quay Lại
                         </a>
                     </div>
                     <div class="card-body">
-                        <form action="<?= BASE_URL ?>routes/index.php?action=admin-update-lich&id=<?= $lich['id'] ?>" method="POST">
+                        
+                        <h6 class="section-title"><i class="bi bi-info-circle-fill"></i> I. Thông Tin Lịch Trình</h6>
+                        <form action="<?= BASE_URL ?>routes/index.php?action=admin-update-lich" method="POST">
+                            <input type="hidden" name="id" value="<?= $lich['id'] ?>">
                             
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tour Du Lịch</label>
-                                <select name="tour_id" class="form-select" required>
-                                    <?php foreach ($tours as $t): ?>
-                                        <option value="<?= $t['id'] ?>" <?= $t['id'] == $lich['tour_id'] ? 'selected' : '' ?>>
-                                            <?= $t['ten_tour'] ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Ngày Giờ Khởi Hành</label>
+                                    <label class="form-label fw-bold">Tour Du Lịch</label>
+                                    <select name="tour_id" class="form-select" required>
+                                        <?php foreach ($tours as $t): ?>
+                                            <option value="<?= $t['id'] ?>" <?= $t['id'] == $lich['tour_id'] ? 'selected' : '' ?>>
+                                                <?= $t['ten_tour'] ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label fw-bold">Ngày Khởi Hành</label>
                                     <input type="datetime-local" name="ngay_khoi_hanh" class="form-control" 
                                            value="<?= date('Y-m-d\TH:i', strtotime($lich['ngay_khoi_hanh'])) ?>" required>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Ngày Giờ Kết Thúc</label>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label fw-bold">Ngày Kết Thúc</label>
                                     <input type="datetime-local" name="ngay_ket_thuc" class="form-control" 
                                            value="<?= date('Y-m-d\TH:i', strtotime($lich['ngay_ket_thuc'])) ?>" required>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Điểm Tập Trung</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Điểm Tập Trung</label>
                                     <input type="text" name="diem_tap_trung" class="form-control" 
                                            value="<?= htmlspecialchars($lich['diem_tap_trung']) ?>" required>
                                 </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-3 mb-3">
                                     <label class="form-label fw-bold">Số Chỗ Tối Đa</label>
                                     <input type="number" name="so_cho_toi_da" class="form-control" 
                                            value="<?= $lich['so_cho_toi_da'] ?>" min="1" required>
-                                    <div class="form-text text-danger">
-                                        Đã có <b><?= $lich['so_cho_da_dat'] ?></b> khách đặt chỗ. (Không thể giảm thấp hơn số này)
-                                    </div>
+                                    <small class="text-danger fst-italic">Đã đặt: <?= $lich['so_cho_da_dat'] ?> chỗ</small>
                                 </div>
-                                
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-3 mb-3">
                                     <label class="form-label fw-bold">Trạng Thái</label>
                                     <select name="trang_thai" class="form-select">
                                         <?php 
@@ -78,25 +96,102 @@
                                 </div>
                             </div>
 
-                            <div class="alert alert-info d-flex align-items-center" role="alert">
-                                <i class="bi bi-info-circle-fill me-2"></i>
-                                <div>
-                                    Để thay đổi <b>Hướng dẫn viên</b> hoặc <b>Tài xế</b>, vui lòng sử dụng chức năng 
-                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-staff&id=<?= $lich['id'] ?>" class="fw-bold text-decoration-underline">Phân bổ nhân sự</a>.
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-end mt-3">
+                            <div class="text-end border-bottom pb-4 mb-4">
                                 <button type="submit" class="btn btn-warning fw-bold px-4">
-                                    <i class="bi bi-save"></i> Cập Nhật
+                                    <i class="bi bi-save"></i> Lưu Thông Tin
                                 </button>
                             </div>
-
                         </form>
+
+                        <h6 class="section-title text-primary" style="border-color: #0d6efd;"><i class="bi bi-people-fill"></i> II. Phân Công Nhân Sự (HDV & Tài Xế)</h6>
+                        
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>Họ Tên</th>
+                                        <th>Vai Trò</th>
+                                        <th>SĐT Liên Hệ</th>
+                                        <th>Loại Hình</th>
+                                        <th class="text-center">Hành Động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($assignedStaff)): ?>
+                                        <?php foreach ($assignedStaff as $s): ?>
+                                            <tr>
+                                                <td class="fw-bold"><?= $s['ho_ten'] ?></td>
+                                                <td>
+                                                    <?php 
+                                                        $roles = [
+                                                            'HDV_chinh' => '<span class="badge bg-success">HDV Chính</span>',
+                                                            'HDV_phu' => '<span class="badge bg-info">HDV Phụ</span>',
+                                                            'TaiXe' => '<span class="badge bg-secondary">Tài Xế</span>',
+                                                            'HauCan' => '<span class="badge bg-light text-dark">Hậu Cần</span>'
+                                                        ];
+                                                        echo $roles[$s['vai_tro']] ?? $s['vai_tro'];
+                                                    ?>
+                                                </td>
+                                                <td><?= $s['sdt'] ?></td>
+                                                <td><?= $s['phan_loai_nhan_su'] ?></td>
+                                                <td class="text-center">
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-remove-staff&id=<?= $s['id'] ?>&lich_id=<?= $lich['id'] ?>" 
+                                                       class="btn btn-sm btn-outline-danger" 
+                                                       onclick="return confirm('Bạn có chắc muốn gỡ nhân sự này khỏi đoàn?')">
+                                                        <i class="bi bi-trash"></i> Gỡ
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted fst-italic py-3">Chưa có nhân sự nào được phân công.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="bg-light p-3 rounded border">
+                            <h6 class="fw-bold mb-3">➕ Thêm nhân sự vào đoàn:</h6>
+                            <form action="<?= BASE_URL ?>routes/index.php?action=admin-add-staff" method="POST" class="row g-2 align-items-center">
+                                <input type="hidden" name="lich_id" value="<?= $lich['id'] ?>">
+                                
+                                <div class="col-md-5">
+                                    <select name="nhan_vien_id" class="form-select" required>
+                                        <option value="">-- Chọn nhân sự (HDV/Tài xế) --</option>
+                                        <?php if(isset($allStaff)): ?>
+                                            <?php foreach ($allStaff as $nv): ?>
+                                                <option value="<?= $nv['id'] ?>">
+                                                    <?= $nv['ho_ten'] ?> (<?= $nv['phan_loai_nhan_su'] ?>) - <?= $nv['sdt'] ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select name="vai_tro" class="form-select" required>
+                                        <option value="">-- Chọn vai trò --</option>
+                                        <option value="HDV_chinh">Hướng Dẫn Viên Chính</option>
+                                        <option value="HDV_phu">Hướng Dẫn Viên Phụ</option>
+                                        <option value="TaiXe">Tài Xế</option>
+                                        <option value="HauCan">Nhân viên Hậu cần</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-person-plus-fill"></i> Phân Công
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
