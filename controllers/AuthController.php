@@ -31,17 +31,8 @@ class AuthController extends BaseController
             $admin = $stmt->fetch();
 
             if ($admin) {
-                // Kiểm tra mật khẩu:
-                // Nếu mật khẩu trong DB chưa mã hóa (VD: '123456') -> so sánh thường
-                // Nếu mật khẩu đã mã hóa (dài > 50 ký tự) -> dùng password_verify
-                $checkPass = false;
-                if (strlen($admin['mat_khau']) < 50 && $admin['mat_khau'] == $pass) {
-                    $checkPass = true; // Cho phép pass cũ
-                } elseif (password_verify($pass, $admin['mat_khau'])) {
-                    $checkPass = true; // Pass đã mã hóa
-                }
-
-                if ($checkPass) {
+                // SỬA: So sánh trực tiếp mật khẩu thô
+                if ($admin['mat_khau'] == $pass) {
                     $_SESSION['user'] = $admin;
                     $_SESSION['role'] = 'admin';
                     header('Location: ' . BASE_URL . 'routes/index.php?action=admin-dashboard');
@@ -55,7 +46,8 @@ class AuthController extends BaseController
             $stmt->execute(['e' => $email]);
             $hdv = $stmt->fetch();
 
-            if ($hdv && password_verify($pass, $hdv['mat_khau'])) {
+            // SỬA: So sánh trực tiếp mật khẩu thô
+            if ($hdv && $hdv['mat_khau'] == $pass) {
                 $_SESSION['user'] = $hdv;
                 $_SESSION['role'] = 'hdv';
                 header('Location: ' . BASE_URL . 'routes/index.php?action=hdv-dashboard');

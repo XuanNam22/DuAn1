@@ -50,7 +50,8 @@ class GuideManagerController extends BaseController {
                 if ($uploaded) $anh = $uploaded;
             }
 
-            $mat_khau_hash = password_hash($_POST['mat_khau'], PASSWORD_DEFAULT);
+            // SỬA: Lưu mật khẩu thô, không dùng password_hash
+            $mat_khau_hash = $_POST['mat_khau'];
 
             $data = [
                 'ho_ten' => $_POST['ho_ten'],
@@ -112,7 +113,8 @@ class GuideManagerController extends BaseController {
             // Chỉ đổi mật khẩu nếu nhập mới
             $mat_khau_update = '';
             if (!empty($_POST['mat_khau_moi'])) {
-                $mat_khau_update = password_hash($_POST['mat_khau_moi'], PASSWORD_DEFAULT);
+                // SỬA: Lưu mật khẩu thô nếu có thay đổi
+                $mat_khau_update = $_POST['mat_khau_moi'];
             }
 
             // [ĐÃ SỬA] Thêm ?? '' vào các trường không bắt buộc để tránh lỗi Undefined array key
