@@ -266,5 +266,16 @@ class LichKhoiHanhModel extends BaseModel
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute(['so_luong' => $soLuongThem, 'id' => $lichId]);
     }
+
+    public function updateStatus($id, $status) {
+        $sql = "UPDATE lich_khoi_hanh 
+                SET trang_thai = :trang_thai 
+                WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([
+            'trang_thai' => $status, 
+            'id' => $id
+        ]);
+    }
 }
 ?>

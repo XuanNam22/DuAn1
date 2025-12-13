@@ -115,79 +115,28 @@
                         <tbody>
                             <?php if (empty($listTours)): ?>
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
-                                        Chưa có chuyến đi nào được tạo.
-                                    </td>
+                                    <td colspan="7" class="text-center py-4 text-muted">Chưa có chuyến đi nào được tạo.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($listTours as $tour): ?>
-                                    <?php
-                                    // --- 1. TÍNH TOÁN THỜI GIAN ---
-                                    $currentTime = time();
-                                    $startTime   = strtotime($tour['ngay_khoi_hanh']);
-                                    $endTime     = strtotime($tour['ngay_ket_thuc']);
-
-                                    // --- 2. CÁC CỜ KIỂM TRA TRẠNG THÁI ---
-
-                                    // Check 1: Đã huỷ (Dựa vào DB)
-                                    $isCancelled = ($tour['trang_thai'] === 'Huy');
-
-                                    // Check 2: Đang đi (Hiện tại nằm giữa Khởi hành và Kết thúc)
-                                    $isOngoing   = ($currentTime >= $startTime && $currentTime <= $endTime);
-
-                                    // Check 3: Hoàn thành (Hiện tại lớn hơn ngày Kết thúc)
-                                    $isFinished  = ($currentTime > $endTime);
-
-                                    // Check 4: Đã đầy (Số chỗ đặt >= tối đa)
-                                    $isFull      = ($tour['so_cho_da_dat'] >= $tour['so_cho_toi_da']);
-
-                                    // --- 3. QUYẾT ĐỊNH HIỂN THỊ TRẠNG THÁI (Theo thứ tự ưu tiên) ---
-                                    if ($isCancelled) {
-                                        $badgeConfig = ['bg' => 'secondary', 'label' => 'Đã hủy'];
-                                    } elseif ($isOngoing) {
-                                        // Logic mới bạn yêu cầu
-                                        $badgeConfig = ['bg' => 'primary', 'label' => 'Đang đi'];
-                                        // Có thể thêm hiệu ứng nhấp nháy (class spinner) nếu muốn
-                                    } elseif ($isFinished) {
-                                        $badgeConfig = ['bg' => 'dark', 'label' => 'Hoàn thành'];
-                                    } elseif ($isFull) {
-                                        $badgeConfig = ['bg' => 'danger', 'label' => 'Đã đầy'];
-                                    } else {
-                                        // Trạng thái mặc định (thường là "Đang nhận khách")
-                                        $badgeConfig = ['bg' => 'success', 'label' => 'Đang nhận khách'];
-                                    }
-
-                                    // --- 4. PHÂN QUYỀN HÀNH ĐỘNG ---
-
-                                    // Được Sửa/Hủy khi: Chưa bắt đầu VÀ Chưa hủy
-                                    // (Lưu ý: Đang đi ($isOngoing) cũng không được sửa/hủy để bảo toàn dữ liệu)
-                                    $canEditOrCancel = ($currentTime < $startTime && !$isCancelled);
-
-                                    // Được Xóa khi: Đã hoàn thành (xong tour) HOẶC Đã hủy
-                                    // (Lưu ý: Đang đi không được xóa)
-                                    $canDelete = ($isFinished || $isCancelled);
-                                    ?>
                                     <tr>
                                         <td class="text-center fw-bold text-muted">#<?= $tour['id'] ?></td>
 
                                         <td>
-                                            <strong><?php echo $tour['ten_tour']; ?></strong>
-                                            <br>
+                                            <strong><?= $tour['ten_tour'] ?></strong><br>
                                             <span class="badge bg-info text-dark">
-                                                <i class="far fa-clock"></i> <?php echo $tour['so_ngay']; ?>N <?php echo $tour['so_dem']; ?>Đ
+                                                <i class="far fa-clock"></i> <?= $tour['so_ngay'] ?>N <?= $tour['so_dem'] ?>Đ
                                             </span>
                                         </td>
 
                                         <td class="text-center small">
-                                            <div><i class="fas fa-plane-departure text-primary"></i> <?php echo date('d/m/Y H:i', $startTime); ?></div>
-                                            <div><i class="fas fa-plane-arrival text-success"></i> <?php echo date('d/m/Y H:i', $endTime); ?></div>
+                                            <div><i class="fas fa-plane-departure text-primary"></i> <?= date('d/m/Y H:i', strtotime($tour['ngay_khoi_hanh'])) ?></div>
+                                            <div><i class="fas fa-plane-arrival text-success"></i> <?= date('d/m/Y H:i', strtotime($tour['ngay_ket_thuc'])) ?></div>
                                         </td>
 
                                         <td class="text-center">
                                             <?php if (!empty($tour['ten_hdv'])): ?>
-                                                <span class="badge rounded-pill bg-success">
-                                                    <i class="fas fa-user-tie"></i> <?= $tour['ten_hdv'] ?>
-                                                </span>
+                                                <span class="badge rounded-pill bg-success"><i class="fas fa-user-tie"></i> <?= $tour['ten_hdv'] ?></span>
                                             <?php else: ?>
                                                 <span class="badge rounded-pill bg-secondary">Chưa phân công</span>
                                             <?php endif; ?>
@@ -196,55 +145,39 @@
                                         <td class="text-center">
                                             <div class="fw-bold"><?= $tour['so_cho_da_dat'] ?> / <?= $tour['so_cho_toi_da'] ?></div>
                                             <div class="progress mt-1" style="height: 5px; width: 80px; margin: 0 auto;">
-                                                <?php
-                                                $percent = ($tour['so_cho_toi_da'] > 0) ? ($tour['so_cho_da_dat'] / $tour['so_cho_toi_da']) * 100 : 0;
-                                                $colorBar = $percent >= 100 ? 'bg-danger' : 'bg-success';
-                                                ?>
-                                                <div class="progress-bar <?= $colorBar ?>" role="progressbar" style="width: <?= $percent ?>%"></div>
+                                                <div class="progress-bar <?= $tour['view_progress_color'] ?>" role="progressbar" style="width: <?= $tour['view_percent'] ?>%"></div>
                                             </div>
                                         </td>
 
                                         <td class="text-center">
-                                            <span class="badge bg-<?= $badgeConfig['bg'] ?>">
-                                                <?php if ($isOngoing): ?> <i class="fas fa-plane"></i> <?php endif; ?>
-                                                <?= $badgeConfig['label'] ?>
+                                            <span class="badge bg-<?= $tour['view_badge']['bg'] ?>">
+                                                <?= $tour['view_badge']['icon'] ?> <?= $tour['view_badge']['label'] ?>
                                             </span>
                                         </td>
 
                                         <td class="text-center">
                                             <div class="btn-group" role="group">
-                                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-lich-detail&id=<?= $tour['id'] ?>"
-                                                    class="btn btn-sm btn-outline-info" title="Danh sách khách">
+                                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-lich-detail&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-info" title="Danh sách khách">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
 
-                                                <?php if ($canEditOrCancel): ?>
-                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-staff&id=<?= $tour['id'] ?>"
-                                                        class="btn btn-sm btn-outline-primary" title="Sửa & Phân bổ">
+                                                <?php if ($tour['can_edit_cancel']): ?>
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-staff&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-primary" title="Sửa & Phân bổ">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-
-                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-cancel-tour&id=<?= $tour['id'] ?>"
-                                                        class="btn btn-sm btn-outline-warning text-dark" title="Hủy chuyến đi này"
-                                                        onclick="return confirm('Bạn có chắc chắn muốn HỦY chuyến đi này?')">
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-cancel-tour&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-warning text-dark" title="Hủy chuyến đi" onclick="return confirm('Bạn có chắc muốn HỦY?')">
                                                         <i class="fas fa-ban"></i> Hủy
                                                     </a>
                                                 <?php else: ?>
-                                                    <button class="btn btn-sm btn-light text-muted" disabled style="cursor: not-allowed;" title="Không thể sửa/hủy khi tour đang đi hoặc đã kết thúc">
-                                                        <i class="fas fa-lock"></i>
-                                                    </button>
+                                                    <button class="btn btn-sm btn-light text-muted" disabled><i class="fas fa-lock"></i></button>
                                                 <?php endif; ?>
 
-                                                <?php if ($canDelete): ?>
-                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-delete-lich&id=<?= $tour['id'] ?>"
-                                                        class="btn btn-sm btn-outline-danger" title="Xóa lịch sử dụng"
-                                                        onclick="return confirm('CẢNH BÁO: Bạn đang xóa một lịch trình ĐÃ KẾT THÚC. Dữ liệu booking sẽ mất. Tiếp tục?')">
+                                                <?php if ($tour['can_delete']): ?>
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-delete-lich&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa lịch trình đã kết thúc?')" title="Xóa">
                                                         <i class="fas fa-trash-alt"></i>
                                                     </a>
                                                 <?php else: ?>
-                                                    <button class="btn btn-sm btn-secondary" disabled title="Chỉ xóa được tour đã kết thúc hoặc đã hủy">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
+                                                    <button class="btn btn-sm btn-secondary" disabled><i class="fas fa-trash-alt"></i></button>
                                                 <?php endif; ?>
                                             </div>
                                         </td>

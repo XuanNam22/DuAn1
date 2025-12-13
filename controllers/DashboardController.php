@@ -2,29 +2,64 @@
 class DashboardController extends BaseController
 {
     // Trang Dashboard chính
-    public function index()
-    {
-        // 1. Chặn nếu không phải admin
-        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            header('Location: ' . BASE_URL . 'routes/index.php?action=login');
-            exit;
-        }
+    // File: controllers/DashboardController.php
 
-        // 2. Lấy số liệu
-        $lichModel = new LichKhoiHanhModel();
-        $totalTours = $lichModel->countAll();
-
-        // Lấy danh sách tất cả các tour
-        $listTours = $lichModel->getAllToursAdmin();
-
-        // 3. Gọi giao diện
-        $this->render('pages/admin/dashboard', [
-            'totalTours' => $totalTours,
-            'listTours'  => $listTours
-        ]);
+public function index()
+{
+    // 1. Chặn nếu không phải admin
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        header('Location: ' . BASE_URL . 'routes/index.php?action=login');
+        exit;
     }
 
-    // 1. Hiển thị form thêm mới
+    // 2. Lấy số liệu
+    $lichModel = new LichKhoiHanhModel();
+    $totalTours = $lichModel->countAll();
+
+    $listTours = $lichModel->getAllToursAdmin();
+    
+    $currentTime = time();
+    $processedTours = [];
+
+    foreach ($listTours as $tour) {
+        $startTime = strtotime($tour['ngay_khoi_hanh']);
+        $endTime   = strtotime($tour['ngay_ket_thuc']);
+
+        $oneDayBefore = $startTime - 86400; 
+        if ($currentTime >= $oneDayBefore && $tour['so_cho_da_dat'] < 10 && $tour['trang_thai'] !== 'Huy') {
+            $lichModel->updateStatus($tour['id'], 'Huy'); 
+            $tour['trang_thai'] = 'Huy'; 
+        }
+        if ($currentTime > $endTime && $tour['trang_thai'] !== 'HoanThanh' && $tour['trang_thai'] !== 'Huy') {
+            $lichModel->updateStatus($tour['id'], 'HoanThanh'); 
+            $tour['trang_thai'] = 'HoanThanh';
+        }
+        $percent = ($tour['so_cho_toi_da'] > 0) ? ($tour['so_cho_da_dat'] / $tour['so_cho_toi_da']) * 100 : 0;
+        $tour['view_percent'] = $percent;
+        $tour['view_progress_color'] = $percent >= 100 ? 'bg-danger' : 'bg-success';
+        
+        if ($tour['trang_thai'] === 'Huy') {
+            $tour['view_badge'] = ['bg' => 'secondary', 'label' => 'Đã hủy', 'icon' => ''];
+        } elseif ($currentTime >= $startTime && $currentTime <= $endTime && $tour['trang_thai'] !== 'Huy') {
+            $tour['view_badge'] = ['bg' => 'primary', 'label' => 'Đang đi', 'icon' => '<i class="fas fa-plane"></i>'];
+        } elseif ($tour['trang_thai'] === 'HoanThanh' || $currentTime > $endTime) {
+             $tour['view_badge'] = ['bg' => 'dark', 'label' => 'Hoàn thành', 'icon' => ''];
+        } elseif ($tour['so_cho_da_dat'] >= $tour['so_cho_toi_da']) {
+            $tour['view_badge'] = ['bg' => 'danger', 'label' => 'Đã đầy', 'icon' => ''];
+        } else {
+            $tour['view_badge'] = ['bg' => 'success', 'label' => 'Đang nhận khách', 'icon' => ''];
+        }
+        
+        $tour['can_edit_cancel'] = ($currentTime < $startTime && $tour['trang_thai'] !== 'Huy');
+        $tour['can_delete'] = ($currentTime > $endTime || $tour['trang_thai'] === 'Huy');
+
+        $processedTours[] = $tour;
+    }
+    $this->render('pages/admin/dashboard', [
+        'totalTours' => $totalTours,
+        'listTours'  => $processedTours 
+    ]);
+}
     public function create() {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'routes/index.php?action=login');
