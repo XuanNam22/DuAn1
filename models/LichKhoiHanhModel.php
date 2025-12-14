@@ -280,5 +280,27 @@ class LichKhoiHanhModel extends BaseModel
         $data['id'] = $id;
         return $stmt->execute($data);
     }
+    public function getAvailableStaff($startDate, $endDate) {
+        $sql = "SELECT id, ho_ten, phan_loai_nhan_su, sdt 
+                FROM huong_dan_vien 
+                WHERE (trang_thai = 'SanSang' OR trang_thai = 'DangBan')
+                AND id NOT IN (
+                    SELECT DISTINCT lnv.nhan_vien_id 
+                    FROM lich_nhan_vien lnv
+                    JOIN lich_khoi_hanh lkh ON lnv.lich_khoi_hanh_id = lkh.id
+                    WHERE lkh.trang_thai != 'Huy'
+                    AND (
+                        lkh.ngay_khoi_hanh < :end_date AND lkh.ngay_ket_thuc > :start_date
+                    )
+                )
+                ORDER BY phan_loai_nhan_su ASC, ho_ten ASC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':start_date' => $startDate,
+            ':end_date' => $endDate
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

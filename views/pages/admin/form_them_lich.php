@@ -10,6 +10,17 @@
 </head>
 
 <body class="bg-light">
+    <?php if (isset($_GET['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-danger" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-octagon-fill fs-4 me-2"></i>
+                <div>
+                    <strong>Rất tiếc!</strong> <?= htmlspecialchars($_GET['error']) ?>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
     <div class="container mt-5 mb-5">
         <div class="row justify-content-center">
             <div class="col-md-9">
@@ -24,7 +35,7 @@
                             <div class="row">
                                 <div class="col-md-6 border-end">
                                     <h5 class="text-primary border-bottom pb-2">1. Thông tin Lịch trình</h5>
-                                    
+
                                     <div class="mb-3">
                                         <label class="fw-bold">Chọn Tour <span class="text-danger">*</span></label>
                                         <select name="tour_id" id="tour_select" class="form-select" required>
@@ -41,17 +52,17 @@
                                         <div class="col-md-6 mb-3">
                                             <label class="fw-bold">Ngày Giờ Khởi Hành</label>
                                             <small class="text-muted d-block mb-1">(Phải cách hôm nay ít nhất 3 ngày)</small>
-                                            <input type="text" id="ngay_khoi_hanh" name="ngay_khoi_hanh" 
-                                                   class="form-control datetimepicker" placeholder="Chọn ngày đi..." required>
+                                            <input type="text" id="ngay_khoi_hanh" name="ngay_khoi_hanh"
+                                                class="form-control datetimepicker" placeholder="Chọn ngày đi..." required>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label class="fw-bold">Ngày Giờ Kết Thúc</label>
                                             <small class="text-muted d-block mb-1">(Tự động tính toán)</small>
-                                            <input type="text" id="ngay_ket_thuc" name="ngay_ket_thuc" 
-                                                   class="form-control datetimepicker" 
-                                                   placeholder="Chọn tour và ngày đi..." 
-                                                   style="background-color: #e9ecef; cursor: not-allowed;"
-                                                   readonly required>
+                                            <input type="text" id="ngay_ket_thuc" name="ngay_ket_thuc"
+                                                class="form-control datetimepicker"
+                                                placeholder="Chọn tour và ngày đi..."
+                                                style="background-color: #e9ecef; cursor: not-allowed;"
+                                                readonly required>
                                         </div>
                                     </div>
 
@@ -71,14 +82,14 @@
 
                                 <div class="col-md-6">
                                     <h5 class="text-primary border-bottom pb-2">2. Phân Bổ Nhân Sự</h5>
-                                    
+
                                     <div class="mb-3">
                                         <label class="fw-bold">Hướng Dẫn Viên (Chính)</label>
                                         <select name="hdv_id" class="form-select">
                                             <option value="">-- Chưa phân công --</option>
                                             <?php foreach ($guides as $g): ?>
                                                 <option value="<?= $g['id'] ?>">
-                                                    <?= $g['ho_ten'] ?> 
+                                                    <?= $g['ho_ten'] ?>
                                                     (<?= $g['phan_loai'] == 'NoiDia' ? 'Nội địa' : 'Quốc tế' ?>)
                                                 </option>
                                             <?php endforeach; ?>
@@ -109,31 +120,31 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script> 
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Cấu hình cơ bản
             const baseConfig = {
-                enableTime: true,       
-                dateFormat: "Y-m-d H:i", 
-                altInput: true,         
-                altFormat: "d/m/Y H:i", 
-                time_24hr: true,        
-                locale: "vn"           
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                altInput: true,
+                altFormat: "d/m/Y H:i",
+                time_24hr: true,
+                locale: "vn"
             };
 
             // 1. Cấu hình NGÀY ĐI: Chặn ngày quá khứ + 3 ngày
             const startConfig = {
                 ...baseConfig,
                 // Dùng PHP để in ra ngày tối thiểu (Hiện tại + 3 ngày)
-                minDate: "<?= date('Y-m-d', strtotime('+4 days')) ?>" 
+                minDate: "<?= date('Y-m-d', strtotime('+4 days')) ?>"
             };
 
             // 2. Cấu hình NGÀY VỀ: Tắt chức năng mở lịch (chỉ hiển thị)
             const endConfig = {
                 ...baseConfig,
                 clickOpens: false, // Quan trọng: Không cho người dùng bấm mở lịch
-                allowInput: false  // Không cho nhập tay
+                allowInput: false // Không cho nhập tay
             };
 
             // Khởi tạo Flatpickr
@@ -142,7 +153,7 @@
 
             // --- TÍNH NĂNG TỰ ĐỘNG TÍNH NGÀY VỀ ---
             const tourSelect = document.getElementById('tour_select');
-            
+
             function calculateEndDate() {
                 // Lấy ngày đi đang chọn
                 const startDateStr = document.getElementById('ngay_khoi_hanh').value;
@@ -156,7 +167,7 @@
                     const startDate = new Date(startDateStr);
 
                     const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + (days - 1)); 
+                    endDate.setDate(endDate.getDate() + (days - 1));
 
                     endDate.setHours(17, 0, 0, 0);
 
@@ -168,4 +179,5 @@
         });
     </script>
 </body>
+
 </html>

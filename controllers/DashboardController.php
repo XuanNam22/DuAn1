@@ -2,7 +2,8 @@
 class DashboardController extends BaseController
 {
 
-    public function index(){
+    public function index()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'routes/index.php?action=login');
             exit;
@@ -10,7 +11,6 @@ class DashboardController extends BaseController
 
         $lichModel = new LichKhoiHanhModel();
         $totalTours = $lichModel->countAll();
-
         $listTours = $lichModel->getAllToursAdmin();
 
         $currentTime = time();
@@ -21,14 +21,26 @@ class DashboardController extends BaseController
             $endTime   = strtotime($tour['ngay_ket_thuc']);
 
             $oneDayBefore = $startTime - 86400;
-            if ($currentTime >= $oneDayBefore && $tour['so_cho_da_dat'] < 10 && $tour['trang_thai'] !== 'Huy') {
-                $lichModel->updateStatus($tour['id'], 'Huy');
-                $tour['trang_thai'] = 'Huy';
+            if ($tour['trang_thai'] === 'NhanKhach' && $currentTime >= $oneDayBefore) {
+                if ($tour['so_cho_da_dat'] < 10) {
+                    $lichModel->updateStatus($tour['id'], 'Huy');
+                    $tour['trang_thai'] = 'Huy';
+                } else {
+                    $lichModel->updateStatus($tour['id'], 'KhongNhanThemKhach');
+                    $tour['trang_thai'] = 'KhongNhanThemKhach';
+                }
             }
+            
+            if ($tour['trang_thai'] === 'KhongNhanThemKhach' && $currentTime >= $startTime && $currentTime <= $endTime) {
+                $lichModel->updateStatus($tour['id'], 'DangDi');
+                $tour['trang_thai'] = 'DangDi';
+            }
+
             if ($currentTime > $endTime && $tour['trang_thai'] !== 'HoanThanh' && $tour['trang_thai'] !== 'Huy') {
                 $lichModel->updateStatus($tour['id'], 'HoanThanh');
                 $tour['trang_thai'] = 'HoanThanh';
             }
+
             $percent = ($tour['so_cho_toi_da'] > 0) ? ($tour['so_cho_da_dat'] / $tour['so_cho_toi_da']) * 100 : 0;
             $tour['view_percent'] = $percent;
             $tour['view_progress_color'] = $percent >= 100 ? 'bg-danger' : 'bg-success';
@@ -48,16 +60,19 @@ class DashboardController extends BaseController
             }
 
             $tour['can_edit_cancel'] = ($currentTime < $startTime && $tour['trang_thai'] !== 'Huy');
+
             $tour['can_delete'] = ($currentTime > $endTime || $tour['trang_thai'] === 'Huy');
 
             $processedTours[] = $tour;
         }
+
         $this->render('pages/admin/dashboard', [
             'totalTours' => $totalTours,
             'listTours'  => $processedTours
         ]);
     }
-    public function create(){
+    public function create()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'routes/index.php?action=login');
             exit;
@@ -72,13 +87,14 @@ class DashboardController extends BaseController
             'guides' => $guides
         ]);
     }
-    public function store(){
+    public function store()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $lichModel = new LichKhoiHanhModel();
 
             $tour_id = $_POST['tour_id'];
             $ngay_di = $_POST['ngay_khoi_hanh'];
-            $ngay_ve = $_POST['ngay_ket_thuc']; 
+            $ngay_ve = $_POST['ngay_ket_thuc'];
             $minTimestamp = strtotime(date('Y-m-d') . ' +3 days');
             $inputTimestamp = strtotime($ngay_di);
 
@@ -110,14 +126,15 @@ class DashboardController extends BaseController
             }
         }
     }
-    public function edit() {
+    public function edit()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
 
         $id = $_GET['id'] ?? 0;
         $lichModel = new LichKhoiHanhModel();
-        
+
         $lich = $lichModel->getDetail($id);
-        
+
         if (!$lich) {
             die("Không tìm thấy lịch trình này!");
         }
@@ -128,11 +145,12 @@ class DashboardController extends BaseController
         $this->render('pages/admin/form_sua_lich', [
             'lich'  => $lich,
             'tours' => $tours,
-            'allStaff' => $allStaff,        
-            'assignedStaff' => $assignedStaff 
+            'allStaff' => $allStaff,
+            'assignedStaff' => $assignedStaff
         ]);
     }
-    public function update(){
+    public function update()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_GET['id'] ?? 0;
             $lichModel = new LichKhoiHanhModel();
@@ -163,7 +181,7 @@ class DashboardController extends BaseController
                 'ngay_khoi_hanh' => $ngay_di,
                 'ngay_ket_thuc' => $ngay_ve,
                 'so_cho_toi_da' => $so_cho_moi,
-                'diem_tap_trung' => $_POST['diem_tap_trung'], 
+                'diem_tap_trung' => $_POST['diem_tap_trung'],
                 'trang_thai' => $_POST['trang_thai']
             ];
 
@@ -174,7 +192,8 @@ class DashboardController extends BaseController
             }
         }
     }
-    public function delete(){
+    public function delete()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'routes/index.php?action=login');
             exit;
@@ -201,7 +220,8 @@ class DashboardController extends BaseController
             header('Location: ' . BASE_URL . 'routes/index.php?action=admin-dashboard');
         }
     }
-    public function services(){
+    public function services()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
 
         $id = $_GET['id'] ?? 0;
@@ -219,7 +239,8 @@ class DashboardController extends BaseController
             'suppliers' => $suppliers
         ]);
     }
-    public function storeService(){
+    public function storeService()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $lichModel = new LichKhoiHanhModel();
 
@@ -251,13 +272,15 @@ class DashboardController extends BaseController
             header('Location: ' . BASE_URL . 'routes/index.php?action=admin-schedule-services&id=' . $lich_id);
         }
     }
-    public function deleteService(){
+    public function deleteService()
+    {
         $id = $_GET['id'];
         $lich_id = $_GET['lich_id'];
         (new LichKhoiHanhModel())->deleteService($id);
         header('Location: ' . BASE_URL . 'routes/index.php?action=admin-schedule-services&id=' . $lich_id);
     }
-    public function updateService(){
+    public function updateService()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $lichModel = new LichKhoiHanhModel();
 
@@ -292,7 +315,8 @@ class DashboardController extends BaseController
             }
         }
     }
-    public function staffAssignment(){
+    public function staffAssignment()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
 
         $lichId = $_GET['id'] ?? null;
@@ -313,17 +337,18 @@ class DashboardController extends BaseController
             'allStaff' => $allStaff,
         ]);
     }
-    public function storeStaff() {
+    public function storeStaff()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $lichModel = new LichKhoiHanhModel();
-            
+
             $lichId = $_POST['lich_id'];
             $nhanVienId = $_POST['nhan_vien_id'];
             $vaiTro = $_POST['vai_tro'];
 
             $lich = $lichModel->getDetail($lichId);
-            $allStaff = $lichModel->getAllNhanVienList(); 
-            
+            $allStaff = $lichModel->getAllNhanVienList();
+
             $staffInfo = null;
             foreach ($allStaff as $s) {
                 if ($s['id'] == $nhanVienId) {
@@ -347,8 +372,8 @@ class DashboardController extends BaseController
             }
 
             $busyTour = $lichModel->checkStaffAvailability(
-                $nhanVienId, 
-                $lich['ngay_khoi_hanh'], 
+                $nhanVienId,
+                $lich['ngay_khoi_hanh'],
                 $lich['ngay_ket_thuc']
             );
 
@@ -356,7 +381,7 @@ class DashboardController extends BaseController
                 $tenTour = $busyTour['ten_tour'];
                 $start = date('d/m H:i', strtotime($busyTour['ngay_khoi_hanh']));
                 $end = date('d/m H:i', strtotime($busyTour['ngay_ket_thuc']));
-                
+
                 echo "<script>
                     alert('KHÔNG THỂ PHÂN CÔNG!\\n\\nNhân sự này đang bận đi tour: \"$tenTour\"\\nThời gian: Từ $start đến $end.\\n\\nVui lòng chọn nhân sự khác.'); 
                     window.history.back();
@@ -379,7 +404,8 @@ class DashboardController extends BaseController
             }
         }
     }
-    public function deleteStaff(){
+    public function deleteStaff()
+    {
         $id = $_GET['id'];
         $lichId = $_GET['lich_id'];
 
@@ -388,7 +414,8 @@ class DashboardController extends BaseController
 
         header('Location: ' . BASE_URL . 'routes/index.php?action=admin-schedule-staff&id=' . $lichId . '&msg=deleted');
     }
-    public function cancelTour(){
+    public function cancelTour()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             header('Location: ' . BASE_URL . 'routes/index.php?action=login');
             exit;
