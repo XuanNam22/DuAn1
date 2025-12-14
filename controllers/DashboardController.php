@@ -40,6 +40,8 @@ public function index()
         
         if ($tour['trang_thai'] === 'Huy') {
             $tour['view_badge'] = ['bg' => 'secondary', 'label' => 'Đã hủy', 'icon' => ''];
+        } elseif ($tour['trang_thai'] === 'KhongNhanThemKhach') {
+            $tour['view_badge'] = ['bg' => 'warning text-dark', 'label' => 'Ngưng nhận khách', 'icon' => '<i class="fas fa-ban"></i>'];
         } elseif ($currentTime >= $startTime && $currentTime <= $endTime && $tour['trang_thai'] !== 'Huy') {
             $tour['view_badge'] = ['bg' => 'primary', 'label' => 'Đang đi', 'icon' => '<i class="fas fa-plane"></i>'];
         } elseif ($tour['trang_thai'] === 'HoanThanh' || $currentTime > $endTime) {
