@@ -39,14 +39,14 @@ class BookingModel extends BaseModel {
         return $stmt->fetchAll();
     }
 
-    // [MỚI] Lấy danh sách tất cả hành khách của 1 lịch khởi hành (Để in danh sách đoàn)
     public function getPassengersByLich($lichId) {
         $sql = "SELECT kt.*, b.sdt_lien_he, b.ten_nguoi_dat 
                 FROM khach_tour kt
                 JOIN bookings b ON kt.booking_id = b.id
                 WHERE b.lich_khoi_hanh_id = :lich_id 
-                AND b.trang_thai IN ('DaXacNhan', 'DaThanhToan')
+                AND b.trang_thai = 'DaXacNhan' 
                 ORDER BY kt.ho_ten_khach ASC";
+        
         $stmt = $this->conn->prepare($sql);
         $stmt->execute(['lich_id' => $lichId]);
         return $stmt->fetchAll();
@@ -73,7 +73,7 @@ class BookingModel extends BaseModel {
 
     public function create($data) {
         $sql = "INSERT INTO bookings (lich_khoi_hanh_id, ten_nguoi_dat, sdt_lien_he, email_lien_he, so_nguoi_lon, so_tre_em, tong_tien, ghi_chu, trang_thai) 
-                VALUES (:lich_id, :ten, :sdt, :email, :sl_lon, :sl_tre, :tong_tien, :ghi_chu, 'ChoXacNhan')";
+                VALUES (:lich_id, :ten, :sdt, :email, :sl_lon, :sl_tre, :tong_tien, :ghi_chu, 'DaXacNhan')";
         
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($data);

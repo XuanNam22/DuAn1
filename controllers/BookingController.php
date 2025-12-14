@@ -37,7 +37,7 @@ class BookingController extends BaseController {
         $id = $_GET['id'] ?? 0;
         $status = $_GET['status'] ?? '';
         $adminName = $_SESSION['user']['ho_ten'] ?? 'Administrator'; 
-        $validStatus = ['ChoXacNhan', 'DaXacNhan', 'DaThanhToan', 'Huy'];
+        $validStatus = ['DaXacNhan', 'Huy'];
 
         if ($id && in_array($status, $validStatus)) {
             $bookingModel = new BookingModel();
