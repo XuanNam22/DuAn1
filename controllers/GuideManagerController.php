@@ -1,47 +1,56 @@
 <?php
-class GuideManagerController extends BaseController {
-    
+class GuideManagerController extends BaseController
+{
+
     private $guideModel;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->guideModel = new GuideModel();
     }
 
-    public function index() {
+    public function index()
+    {
+        // 1. Kiểm tra quyền Admin
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
-        
-        // Kiểm tra xem user có muốn xem thùng rác không
-        $isTrash = isset($_GET['view']) && $_GET['view'] === 'trash';
 
+        // 2. Lấy các tham số lọc từ URL (keyword, vai trò, trạng thái...)
         $filters = [
             'keyword'    => $_GET['keyword'] ?? '',
             'phan_loai'  => $_GET['phan_loai'] ?? '',
             'role'       => $_GET['role'] ?? '',
             'trang_thai' => $_GET['trang_thai'] ?? '',
-            'view_trash' => $isTrash // Truyền tham số này sang Model
         ];
-        
+
+        // 3. Gọi Model để lấy danh sách nhân sự
         $guides = $this->guideModel->getAll($filters);
-        
+
+        // 4. Render View và truyền dữ liệu
         $this->render('pages/admin/guides/index', [
-            'guides' => $guides, 
-            'filters' => $filters,
-            'isTrash' => $isTrash // Truyền biến $isTrash sang View
+            'guides' => $guides,
+            'filters' => $filters
         ]);
     }
 
-    public function create() {
+    public function create()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
         $this->render('pages/admin/guides/form_them');
     }
 
-    public function store() {
+    public function store()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email']);
-            
+
             // 1. Kiểm tra email
             if ($this->guideModel->checkEmailExists($email)) {
                 echo "<script>alert('Lỗi: Email này đã tồn tại!'); window.history.back();</script>";
+                return;
+            }
+            $sdt = trim($_POST['sdt']);
+            if (!preg_match('/^0[0-9]{9}$/', $sdt)) {
+                echo "<script>alert('Lỗi: Số điện thoại không hợp lệ (Phải bắt đầu bằng số 0 và có 10 chữ số)!'); window.history.back();</script>";
                 return;
             }
 
@@ -65,7 +74,7 @@ class GuideManagerController extends BaseController {
                 'chung_chi' => $_POST['chung_chi'] ?? '',
                 'kinh_nghiem' => $_POST['kinh_nghiem'] ?? '',
                 'suc_khoe' => $_POST['suc_khoe'] ?? 'Tốt',
-                'role' => $_POST['phan_loai_nhan_su'] ?? 'HDV', 
+                'role' => $_POST['phan_loai_nhan_su'] ?? 'HDV',
             ];
 
             if ($this->guideModel->insert($data)) {
@@ -76,7 +85,8 @@ class GuideManagerController extends BaseController {
         }
     }
 
-    public function edit() {
+    public function edit()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
         $id = $_GET['id'] ?? 0;
         $guide = $this->guideModel->getDetail($id);
@@ -84,7 +94,8 @@ class GuideManagerController extends BaseController {
         $this->render('pages/admin/guides/form_sua', ['guide' => $guide]);
     }
 
-    public function update() {
+    public function update()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];
             $email = trim($_POST['email']);
@@ -92,6 +103,12 @@ class GuideManagerController extends BaseController {
             // Kiểm tra email trùng
             if ($this->guideModel->checkEmailExists($email, $id)) {
                 echo "<script>alert('Lỗi: Email này đã được sử dụng!'); window.history.back();</script>";
+                return;
+            }
+
+            $sdt = trim($_POST['sdt']);
+            if (!preg_match('/^0[0-9]{9}$/', $sdt)) {
+                echo "<script>alert('Lỗi: Số điện thoại không hợp lệ (Phải bắt đầu bằng số 0 và có 10 chữ số)!'); window.history.back();</script>";
                 return;
             }
 
@@ -130,30 +147,37 @@ class GuideManagerController extends BaseController {
 
             // Gọi Model để update
             $this->guideModel->update($id, $data);
-            
+
             // Chuyển hướng
             header('Location: ' . BASE_URL . 'routes/index.php?action=admin-guides&msg=updated');
         }
     }
 
-    public function delete() {
+    public function delete()
+    {
         $id = $_GET['id'] ?? 0;
-        
-        $this->guideModel->delete($id);
-        
+
+        // 1. Lấy thông tin nhân viên để lấy tên file ảnh
+        $guide = $this->guideModel->getDetail($id);
+
+        if ($guide) {
+            // 2. Xóa ảnh nếu không phải ảnh mặc định
+            if ($guide['anh_dai_dien'] != 'default_avatar.png') {
+                $path = 'assets/uploads/hdv/' . $guide['anh_dai_dien'];
+                if (file_exists($path)) {
+                    unlink($path); // Xóa file ảnh vật lý
+                }
+            }
+
+            // 3. Xóa dữ liệu trong DB
+            $this->guideModel->delete($id);
+        }
+
         header('Location: ' . BASE_URL . 'routes/index.php?action=admin-guides&msg=deleted');
     }
 
-    public function restore() {
-        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
-
-        $id = $_GET['id'] ?? 0;
-        $this->guideModel->restore($id);
-        
-        header('Location: ' . BASE_URL . 'routes/index.php?action=admin-guides&view=trash&msg=restored');
-    }
-
-    public function detail() {
+    public function detail()
+    {
         if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') exit;
         $id = $_GET['id'] ?? 0;
         $guide = $this->guideModel->getDetail($id);
@@ -162,11 +186,14 @@ class GuideManagerController extends BaseController {
     }
 
     private function uploadImage($file) {
-        $targetDir = "assets/uploads/hdv/";
-        if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
-        $fileName = time() . "_" . basename($file["name"]);
-        if (move_uploaded_file($file["tmp_name"], $targetDir . $fileName)) return $fileName;
-        return false;
+    $targetDir = "../assets/uploads/hdv/"; 
+    if (!file_exists($targetDir)) {
+        mkdir($targetDir, 0777, true); 
     }
+    $fileName = time() . "_" . basename($file["name"]);
+    if (move_uploaded_file($file["tmp_name"], $targetDir . $fileName)) {
+        return $fileName;
+    }
+    return false;
 }
-?>
+}

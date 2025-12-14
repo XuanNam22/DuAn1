@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <title>Cập Nhật Hồ Sơ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
     <div class="container mt-4 mb-5">
         <div class="card shadow col-md-10 mx-auto">
@@ -28,11 +30,19 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold">Số điện thoại</label>
-                            <input type="text" name="sdt" class="form-control" value="<?= htmlspecialchars($guide['sdt']) ?>">
+                            <input type="tel"
+                                name="sdt"
+                                class="form-control"
+                                value="<?= htmlspecialchars($guide['sdt']) ?>"
+                                required
+                                pattern="0[0-9]{9}"
+                                title="Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0"
+                                placeholder="Ví dụ: 0912345678"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold">Ngày sinh</label>
-                            <input type="date" name="ngay_sinh" class="form-control" value="<?= $guide['ngay_sinh'] ?>">
+                            <input type="date" name="ngay_sinh" class="form-control" value="<?= $guide['ngay_sinh'] ?>" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold">Ảnh Đại Diện</label>
@@ -52,4 +62,5 @@
         </div>
     </div>
 </body>
+
 </html>
