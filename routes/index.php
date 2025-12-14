@@ -78,6 +78,7 @@ match ($action) {
     'admin-schedule-service-store' => (new DashboardController)->storeService(),
     'admin-schedule-service-delete'=> (new DashboardController)->deleteService(),
     'admin-schedule-service-update'=> (new DashboardController)->updateService(),
+    'admin-cancel-tour' => (new DashboardController)->cancelTour(),
 
     // Điều hành Phân bổ Nhân sự
     'admin-add-staff'      => (new TourController)->addStaff(),     // Xử lý thêm nhân sự

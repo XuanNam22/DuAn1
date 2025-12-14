@@ -423,5 +423,44 @@ public function index()
 
         header('Location: ' . BASE_URL . 'routes/index.php?action=admin-schedule-staff&id=' . $lichId . '&msg=deleted');
     }
+    // [THÊM MỚI] Hàm xử lý Hủy Tour an toàn
+    public function cancelTour() {
+        // 1. Check quyền admin
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            header('Location: ' . BASE_URL . 'routes/index.php?action=login');
+            exit;
+        }
+
+        $id = $_GET['id'] ?? 0;
+        $lichModel = new LichKhoiHanhModel();
+        $lich = $lichModel->getDetail($id);
+
+        if (!$lich) {
+            echo "<script>alert('Tour không tồn tại!'); window.history.back();</script>";
+            return;
+        }
+
+        // 2. [QUAN TRỌNG] Kiểm tra thời gian khởi hành
+        $currentTime = time();
+        $startTime = strtotime($lich['ngay_khoi_hanh']);
+
+        // Nếu thời gian hiện tại đã vượt qua thời gian khởi hành => KHÔNG CHO HỦY
+        if ($currentTime >= $startTime) {
+            echo "<script>
+                alert('LỖI: Không thể hủy tour này vì xe đã lăn bánh!\\n\\nTour đã khởi hành lúc: " . date('H:i d/m/Y', $startTime) . "'); 
+                window.history.back();
+            </script>";
+            return;
+        }
+
+        // 3. Nếu tour chưa chạy => Cho phép cập nhật trạng thái
+        if ($lichModel->updateStatus($id, 'Huy')) {
+            header('Location: ' . BASE_URL . 'routes/index.php?action=admin-dashboard&msg=cancel_success');
+        } else {
+            echo "Lỗi hệ thống, vui lòng thử lại.";
+        }
+    }
 }
+
+
 ?>

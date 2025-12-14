@@ -157,27 +157,36 @@
 
                                         <td class="text-center">
                                             <div class="btn-group" role="group">
-                                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-lich-detail&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-info" title="Danh sách khách">
+                                                <a href="<?= BASE_URL ?>routes/index.php?action=admin-lich-detail&id=<?= $tour['id'] ?>"
+                                                    class="btn btn-sm btn-outline-info" title="Xem chi tiết & DS Khách">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
 
                                                 <?php if ($tour['can_edit_cancel']): ?>
-                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-staff&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-primary" title="Sửa & Phân bổ">
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-schedule-staff&id=<?= $tour['id'] ?>"
+                                                        class="btn btn-sm btn-outline-primary" title="Sửa lịch & Phân bổ nhân sự">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-cancel-tour&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-warning text-dark" title="Hủy chuyến đi" onclick="return confirm('Bạn có chắc muốn HỦY?')">
-                                                        <i class="fas fa-ban"></i> Hủy
+
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-cancel-tour&id=<?= $tour['id'] ?>"
+                                                        class="btn btn-sm btn-outline-warning text-dark"
+                                                        title="Hủy chuyến đi này"
+                                                        onclick="return confirm('CẢNH BÁO QUAN TRỌNG:\n\nBạn có chắc chắn muốn HỦY chuyến đi này?\n- Trạng thái sẽ chuyển thành Đã Hủy.\n- Khách hàng sẽ cần được thông báo hoàn tiền.')">
+                                                        <i class="fas fa-ban"></i>
                                                     </a>
                                                 <?php else: ?>
-                                                    <button class="btn btn-sm btn-light text-muted" disabled><i class="fas fa-lock"></i></button>
+                                                    <button class="btn btn-sm btn-light text-muted" title="Đã khóa (Tour đang chạy hoặc đã kết thúc)" disabled>
+                                                        <i class="fas fa-lock"></i>
+                                                    </button>
                                                 <?php endif; ?>
 
                                                 <?php if ($tour['can_delete']): ?>
-                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-delete-lich&id=<?= $tour['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa lịch trình đã kết thúc?')" title="Xóa">
+                                                    <a href="<?= BASE_URL ?>routes/index.php?action=admin-delete-lich&id=<?= $tour['id'] ?>"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('Xóa vĩnh viễn lịch trình này? Hành động không thể phục hồi!')"
+                                                        title="Xóa dữ liệu">
                                                         <i class="fas fa-trash-alt"></i>
                                                     </a>
-                                                <?php else: ?>
-                                                    <button class="btn btn-sm btn-secondary" disabled><i class="fas fa-trash-alt"></i></button>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
