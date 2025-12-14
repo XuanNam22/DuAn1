@@ -47,8 +47,6 @@ class LichKhoiHanhModel extends BaseModel
         $stmt->execute();
         return $stmt->fetchAll();
     }
-
-    // [ĐÃ SỬA] Thêm cột sdt vào câu lệnh SELECT để View hiển thị được
     public function getAllNhanVienList() {
         $sql = "SELECT id, ho_ten, phan_loai_nhan_su, sdt 
                 FROM huong_dan_vien 
@@ -58,7 +56,6 @@ class LichKhoiHanhModel extends BaseModel
         $stmt->execute();
         return $stmt->fetchAll();
     }
-
     public function insert($data) {
         $sql = "INSERT INTO lich_khoi_hanh 
                 (tour_id, ngay_khoi_hanh, ngay_ket_thuc, so_cho_toi_da, diem_tap_trung, trang_thai) 
@@ -86,7 +83,6 @@ class LichKhoiHanhModel extends BaseModel
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
-
     public function update($id, $data) {
         $sql = "UPDATE lich_khoi_hanh 
                 SET tour_id = :tour_id, 
@@ -162,18 +158,17 @@ class LichKhoiHanhModel extends BaseModel
         $stmt = $this->conn->prepare("DELETE FROM lich_nhan_vien WHERE id = :id");
         return $stmt->execute(['id' => $id]);
     }
-    public function checkStaffAvailability($nhan_vien_id, $startDate, $endDate, $vai_tro) {
-        if ($vai_tro === 'HauCan') return true; 
-
-        $sql = "SELECT COUNT(*) as count 
+    public function checkStaffAvailability($nhan_vien_id, $startDate, $endDate) {
+        $sql = "SELECT t.ten_tour, lkh.ngay_khoi_hanh, lkh.ngay_ket_thuc
                 FROM lich_nhan_vien lnv
                 JOIN lich_khoi_hanh lkh ON lnv.lich_khoi_hanh_id = lkh.id
+                JOIN tours t ON lkh.tour_id = t.id
                 WHERE lnv.nhan_vien_id = :nv_id 
-                AND lnv.vai_tro IN ('HDV_chinh', 'HDV_phu', 'TaiXe')
                 AND lkh.trang_thai != 'Huy' 
                 AND (
-                    (lkh.ngay_khoi_hanh <= :end_date AND lkh.ngay_ket_thuc >= :start_date)
-                )";
+                    lkh.ngay_khoi_hanh < :end_date AND lkh.ngay_ket_thuc > :start_date
+                )
+                LIMIT 1";
 
         $stmt = $this->conn->prepare($sql);
         
@@ -184,9 +179,7 @@ class LichKhoiHanhModel extends BaseModel
         ];
 
         $stmt->execute($params);
-        $result = $stmt->fetch();
-
-        return $result['count'] == 0; 
+        return $stmt->fetch(PDO::FETCH_ASSOC); 
     }
     public function getServices($lich_id) {
         $sql = "SELECT dv.*, ncc.ten_ncc, ncc.sdt, ncc.dich_vu as linh_vuc_ncc
@@ -244,7 +237,6 @@ class LichKhoiHanhModel extends BaseModel
         $stmt->execute(['tour_id' => $tourId]);
         return $stmt->fetchAll();
     }
-
     public function checkAvailability($lichId, $soLuongKhach) {
         $sql = "SELECT (so_cho_toi_da - so_cho_da_dat) as cho_trong 
                 FROM lich_khoi_hanh 
@@ -258,7 +250,6 @@ class LichKhoiHanhModel extends BaseModel
         }
         return false; 
     }
-
     public function updateBookedSeats($lichId, $soLuongThem) {
         $sql = "UPDATE lich_khoi_hanh 
                 SET so_cho_da_dat = so_cho_da_dat + :so_luong 
@@ -266,7 +257,6 @@ class LichKhoiHanhModel extends BaseModel
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute(['so_luong' => $soLuongThem, 'id' => $lichId]);
     }
-
     public function updateStatus($id, $status) {
         $sql = "UPDATE lich_khoi_hanh 
                 SET trang_thai = :trang_thai 
@@ -277,9 +267,7 @@ class LichKhoiHanhModel extends BaseModel
             'id' => $id
         ]);
     }
-    
     public function updateScheduleInfo($id, $data) {
-        // Lưu ý: SQL này KHÔNG có tour_id
         $sql = "UPDATE lich_khoi_hanh 
                 SET ngay_khoi_hanh = :ngay_khoi_hanh, 
                     ngay_ket_thuc = :ngay_ket_thuc, 
