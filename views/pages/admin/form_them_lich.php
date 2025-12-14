@@ -84,25 +84,45 @@
                                     <h5 class="text-primary border-bottom pb-2">2. Phân Bổ Nhân Sự</h5>
 
                                     <div class="mb-3">
-                                        <label class="fw-bold">Hướng Dẫn Viên (Chính)</label>
+                                        <label class="fw-bold text-success">Hướng Dẫn Viên (Chính)</label>
                                         <select name="hdv_id" class="form-select">
-                                            <option value="">-- Chưa phân công --</option>
-                                            <?php foreach ($guides as $g): ?>
+                                            <option value="">-- Chọn Hướng Dẫn Viên --</option>
+                                            <?php
+                                            // Sử dụng biến $listHDV được truyền từ Controller (hoặc lọc từ $guides nếu chưa sửa controller)
+                                            $sourceHDV = isset($listHDV) ? $listHDV : ($guides ?? []);
+                                            foreach ($sourceHDV as $g):
+                                                // Chỉ hiện HDV
+                                                if (isset($g['phan_loai_nhan_su']) && $g['phan_loai_nhan_su'] !== 'HDV') continue;
+                                            ?>
                                                 <option value="<?= $g['id'] ?>">
-                                                    <?= $g['ho_ten'] ?>
-                                                    (<?= $g['phan_loai'] == 'NoiDia' ? 'Nội địa' : 'Quốc tế' ?>)
+                                                    <?= $g['ho_ten'] ?> (<?= $g['sdt'] ?>)
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div class="form-text text-muted fst-italic">
-                                            * Bạn có thể phân công thêm Tài xế/Hậu cần sau khi tạo xong.
-                                        </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="fw-bold">Ghi chú Nhân sự (Tài xế/Hậu cần)</label>
-                                        <textarea name="ghi_chu_nhan_su" class="form-control" rows="6"
-                                            placeholder="- Tài xế: Nguyễn Văn A (09xxxx)&#10;- Biển số: 29B-12345&#10;- Phụ xe: Trần Văn B..."></textarea>
+                                        <label class="fw-bold text-secondary">Tài Xế</label>
+                                        <select name="taixe_id" class="form-select">
+                                            <option value="">-- Chọn Tài Xế --</option>
+                                            <?php
+                                            // Sử dụng biến $listTaiXe được truyền từ Controller (hoặc lọc từ $guides/allStaff)
+                                            $sourceTaiXe = isset($listTaiXe) ? $listTaiXe : ($guides ?? []);
+                                            foreach ($sourceTaiXe as $g):
+                                                // Chỉ hiện Tài xế (nếu dùng chung nguồn dữ liệu)
+                                                if (isset($g['phan_loai_nhan_su']) && $g['phan_loai_nhan_su'] !== 'TaiXe') continue;
+                                            ?>
+                                                <option value="<?= $g['id'] ?>">
+                                                    <?= $g['ho_ten'] ?> (<?= $g['sdt'] ?>)
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="fw-bold">Ghi chú Nhân sự (Biển số/Phụ xe...)</label>
+                                        <textarea name="ghi_chu_nhan_su" class="form-control" rows="5"
+                                            placeholder="- Biển số: 29B-12345&#10;- Phụ xe: Trần Văn B..."></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -123,7 +143,6 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Cấu hình cơ bản
             const baseConfig = {
                 enableTime: true,
                 dateFormat: "Y-m-d H:i",
@@ -132,45 +151,31 @@
                 time_24hr: true,
                 locale: "vn"
             };
-
-            // 1. Cấu hình NGÀY ĐI: Chặn ngày quá khứ + 3 ngày
             const startConfig = {
                 ...baseConfig,
-                // Dùng PHP để in ra ngày tối thiểu (Hiện tại + 3 ngày)
                 minDate: "<?= date('Y-m-d', strtotime('+4 days')) ?>"
             };
-
-            // 2. Cấu hình NGÀY VỀ: Tắt chức năng mở lịch (chỉ hiển thị)
             const endConfig = {
                 ...baseConfig,
-                clickOpens: false, // Quan trọng: Không cho người dùng bấm mở lịch
-                allowInput: false // Không cho nhập tay
+                clickOpens: false,
+                allowInput: false
             };
 
-            // Khởi tạo Flatpickr
             const fp_start = flatpickr("#ngay_khoi_hanh", startConfig);
             const fp_end = flatpickr("#ngay_ket_thuc", endConfig);
-
-            // --- TÍNH NĂNG TỰ ĐỘNG TÍNH NGÀY VỀ ---
             const tourSelect = document.getElementById('tour_select');
 
             function calculateEndDate() {
-                // Lấy ngày đi đang chọn
                 const startDateStr = document.getElementById('ngay_khoi_hanh').value;
                 if (!startDateStr) return;
-
-                // Lấy số ngày của tour từ attribute data-days
                 const selectedOption = tourSelect.options[tourSelect.selectedIndex];
                 const days = parseInt(selectedOption.getAttribute('data-days')) || 0;
 
                 if (days > 0) {
                     const startDate = new Date(startDateStr);
-
                     const endDate = new Date(startDate);
                     endDate.setDate(endDate.getDate() + (days - 1));
-
                     endDate.setHours(17, 0, 0, 0);
-
                     fp_end.setDate(endDate);
                 }
             }

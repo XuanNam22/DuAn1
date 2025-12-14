@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -14,7 +15,6 @@
             color: #333;
             font-weight: bold;
         }
-
         .readonly-field {
             background-color: #e9ecef;
             cursor: not-allowed;
@@ -116,10 +116,8 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Trạng Thái</label>
-
                                     <?php
                                     $editable_states = ['NhanKhach', 'KhongNhanThemKhach'];
-
                                     $all_labels = [
                                         'NhanKhach' => 'Nhận Khách',
                                         'KhongNhanThemKhach' => 'Không nhận thêm khách',
@@ -129,7 +127,6 @@
                                         'Huy' => 'Đã Hủy'
                                     ];
                                     ?>
-
                                     <?php if (in_array($lich['trang_thai'], $editable_states)): ?>
                                         <select name="trang_thai" class="form-select">
                                             <?php foreach ($editable_states as $key): ?>
@@ -141,9 +138,7 @@
                                     <?php else: ?>
                                         <input type="text" class="form-control readonly-field text-danger fw-bold"
                                             value="<?= $all_labels[$lich['trang_thai']] ?? $lich['trang_thai'] ?>" readonly>
-
                                         <input type="hidden" name="trang_thai" value="<?= $lich['trang_thai'] ?>">
-
                                         <small class="text-muted fst-italic">
                                             <i class="bi bi-lock-fill"></i> Trạng thái này không thể chỉnh sửa thủ công.
                                         </small>
@@ -158,8 +153,7 @@
                             </div>
                         </form>
 
-                        <h6 class="section-title text-primary" style="border-color: #0d6efd;"><i class="bi bi-people-fill"></i> II. Phân Công Nhân Sự (HDV & Tài Xế)</h6>
-
+                        <h6 class="section-title text-primary" style="border-color: #0d6efd;"><i class="bi bi-people-fill"></i> II. Danh Sách Nhân Sự</h6>
                         <div class="table-responsive mb-4">
                             <table class="table table-bordered table-hover align-middle">
                                 <thead class="table-primary">
@@ -207,38 +201,74 @@
                             </table>
                         </div>
 
-                        <div class="bg-light p-3 rounded border">
-                            <h6 class="fw-bold mb-3">➕ Thêm nhân sự vào đoàn:</h6>
-                            <form action="<?= BASE_URL ?>routes/index.php?action=admin-add-staff" method="POST" class="row g-2 align-items-center">
-                                <input type="hidden" name="lich_id" value="<?= $lich['id'] ?>">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card h-100 border-primary shadow-sm">
+                                    <div class="card-header bg-primary text-white fw-bold">
+                                        <i class="bi bi-person-badge"></i> Phân Công Hướng Dẫn Viên
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="<?= BASE_URL ?>routes/index.php?action=admin-add-staff" method="POST">
+                                            <input type="hidden" name="lich_id" value="<?= $lich['id'] ?>">
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Chọn HDV:</label>
+                                                <select name="nhan_vien_id" class="form-select" required>
+                                                    <option value="">-- Chọn HDV --</option>
+                                                    <?php if(!empty($listHDV)): ?>
+                                                        <?php foreach ($listHDV as $nv): ?>
+                                                            <option value="<?= $nv['id'] ?>">
+                                                                <?= $nv['ho_ten'] ?> (<?= $nv['sdt'] ?>)
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Vai trò:</label>
+                                                <select name="vai_tro" class="form-select" required>
+                                                    <option value="HDV_chinh">HDV Chính</option>
+                                                    <option value="HDV_phu">HDV Phụ</option>
+                                                    <option value="HauCan">Hậu Cần</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary w-100">Thêm HDV</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
 
-                                <div class="col-md-5">
-                                    <select name="nhan_vien_id" class="form-select" required>
-                                        <option value="">-- Chọn nhân sự (HDV/Tài xế) --</option>
-                                        <?php if (isset($allStaff)): ?>
-                                            <?php foreach ($allStaff as $nv): ?>
-                                                <option value="<?= $nv['id'] ?>">
-                                                    <?= $nv['ho_ten'] ?> (<?= $nv['phan_loai_nhan_su'] ?>) - <?= $nv['sdt'] ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        <?php endif; ?>
-                                    </select>
+                            <div class="col-md-6">
+                                <div class="card h-100 border-secondary shadow-sm">
+                                    <div class="card-header bg-secondary text-white fw-bold">
+                                        <i class="bi bi-truck"></i> Phân Công Tài Xế
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="<?= BASE_URL ?>routes/index.php?action=admin-add-staff" method="POST">
+                                            <input type="hidden" name="lich_id" value="<?= $lich['id'] ?>">
+                                            <input type="hidden" name="vai_tro" value="TaiXe">
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Chọn Tài Xế:</label>
+                                                <select name="nhan_vien_id" class="form-select" required>
+                                                    <option value="">-- Chọn Tài Xế --</option>
+                                                    <?php if(!empty($listTaiXe)): ?>
+                                                        <?php foreach ($listTaiXe as $nv): ?>
+                                                            <option value="<?= $nv['id'] ?>">
+                                                                <?= $nv['ho_ten'] ?> (<?= $nv['sdt'] ?>)
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label text-white">Placeholder</label> <input type="text" class="form-control" value="Vai trò: Tài Xế" disabled readonly>
+                                            </div>
+                                            <button type="submit" class="btn btn-secondary w-100">Thêm Tài Xế</button>
+                                        </form>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <select name="vai_tro" class="form-select" required>
-                                        <option value="">-- Chọn vai trò --</option>
-                                        <option value="HDV_chinh">Hướng Dẫn Viên Chính</option>
-                                        <option value="HDV_phu">Hướng Dẫn Viên Phụ</option>
-                                        <option value="TaiXe">Tài Xế</option>
-                                        <option value="HauCan">Nhân viên Hậu cần</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-person-plus-fill"></i> Phân Công
-                                    </button>
-                                </div>
-                            </form>
+                            </div>
                         </div>
 
                     </div>
@@ -249,5 +279,4 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
