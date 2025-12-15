@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css">
 </head>
+
 <body class="bg-light">
     <?php if (isset($_GET['error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show shadow-sm border-danger" role="alert">
@@ -84,37 +85,18 @@
 
                                     <div class="mb-3">
                                         <label class="fw-bold text-success">Hướng Dẫn Viên (Chính)</label>
-                                        <select name="hdv_id" class="form-select" required>
-                                            <option value="">-- Chọn Hướng Dẫn Viên --</option>
-                                            <?php
-                                            // Sử dụng biến $listHDV được truyền từ Controller (hoặc lọc từ $guides nếu chưa sửa controller)
-                                            $sourceHDV = isset($listHDV) ? $listHDV : ($guides ?? []);
-                                            foreach ($sourceHDV as $g):
-                                                // Chỉ hiện HDV
-                                                if (isset($g['phan_loai_nhan_su']) && $g['phan_loai_nhan_su'] !== 'HDV') continue;
-                                            ?>
-                                                <option value="<?= $g['id'] ?>">
-                                                    <?= $g['ho_ten'] ?> (<?= $g['sdt'] ?>)
-                                                </option>
-                                            <?php endforeach; ?>
+                                        <select name="hdv_id" id="hdv_select" class="form-select" required disabled>
+                                            <option value="">-- Vui lòng chọn Tour & Ngày đi trước --</option>
                                         </select>
+                                        <div id="hdv_loading" class="text-muted small mt-1" style="display:none">
+                                            <span class="spinner-border spinner-border-sm"></span> Đang kiểm tra lịch...
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="fw-bold text-secondary">Tài Xế</label>
-                                        <select name="taixe_id" class="form-select" required>
-                                            <option value="">-- Chọn Tài Xế --</option>
-                                            <?php
-                                            // Sử dụng biến $listTaiXe được truyền từ Controller (hoặc lọc từ $guides/allStaff)
-                                            $sourceTaiXe = isset($listTaiXe) ? $listTaiXe : ($guides ?? []);
-                                            foreach ($sourceTaiXe as $g):
-                                                // Chỉ hiện Tài xế (nếu dùng chung nguồn dữ liệu)
-                                                if (isset($g['phan_loai_nhan_su']) && $g['phan_loai_nhan_su'] !== 'TaiXe') continue;
-                                            ?>
-                                                <option value="<?= $g['id'] ?>">
-                                                    <?= $g['ho_ten'] ?> (<?= $g['sdt'] ?>)
-                                                </option>
-                                            <?php endforeach; ?>
+                                        <select name="taixe_id" id="taixe_select" class="form-select" required disabled>
+                                            <option value="">-- Vui lòng chọn Tour & Ngày đi trước --</option>
                                         </select>
                                     </div>
 
@@ -142,6 +124,7 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- Cấu hình Flatpickr (Giữ nguyên) ---
             const baseConfig = {
                 enableTime: true,
                 dateFormat: "Y-m-d H:i",
@@ -162,24 +145,103 @@
 
             const fp_start = flatpickr("#ngay_khoi_hanh", startConfig);
             const fp_end = flatpickr("#ngay_ket_thuc", endConfig);
-            const tourSelect = document.getElementById('tour_select');
 
-            function calculateEndDate() {
+            const tourSelect = document.getElementById('tour_select');
+            const hdvSelect = document.getElementById('hdv_select');
+            const taixeSelect = document.getElementById('taixe_select');
+            const hdvLoading = document.getElementById('hdv_loading');
+
+            // Hàm tính ngày về và gọi API kiểm tra nhân sự
+            function handleDateChange() {
                 const startDateStr = document.getElementById('ngay_khoi_hanh').value;
-                if (!startDateStr) return;
                 const selectedOption = tourSelect.options[tourSelect.selectedIndex];
                 const days = parseInt(selectedOption.getAttribute('data-days')) || 0;
 
-                if (days > 0) {
-                    const startDate = new Date(startDateStr);
-                    const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + (days - 1));
-                    endDate.setHours(17, 0, 0, 0);
-                    fp_end.setDate(endDate);
+                if (!startDateStr || days === 0) {
+                    resetStaffSelects();
+                    return;
                 }
+
+                // 1. Tính toán ngày về
+                const startDate = new Date(startDateStr);
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + (days - 1));
+                endDate.setHours(17, 0, 0, 0); // Giả sử kết thúc lúc 17h
+                fp_end.setDate(endDate);
+
+                // Lấy chuỗi ngày về format Y-m-d H:i để gửi lên server
+                const endDateStr = flatpickr.formatDate(endDate, "Y-m-d H:i");
+
+                // 2. Gọi AJAX kiểm tra nhân sự
+                checkStaffAvailability(startDateStr, endDateStr);
             }
-            document.getElementById('ngay_khoi_hanh').addEventListener('change', calculateEndDate);
-            tourSelect.addEventListener('change', calculateEndDate);
+
+            function resetStaffSelects() {
+                hdvSelect.innerHTML = '<option value="">-- Vui lòng chọn Tour & Ngày đi trước --</option>';
+                taixeSelect.innerHTML = '<option value="">-- Vui lòng chọn Tour & Ngày đi trước --</option>';
+                hdvSelect.disabled = true;
+                taixeSelect.disabled = true;
+            }
+
+            function checkStaffAvailability(start, end) {
+                // Hiệu ứng loading
+                hdvSelect.disabled = true;
+                taixeSelect.disabled = true;
+                hdvLoading.style.display = 'block';
+
+                // URL này trỏ đến Controller xử lý (Xem Bước 2)
+                const url = `<?= BASE_URL ?>routes/index.php?action=api-check-availability`;
+
+                const formData = new FormData();
+                formData.append('ngay_di', start);
+                formData.append('ngay_ve', end);
+
+                fetch(url, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        hdvLoading.style.display = 'none';
+
+                        // Mở khóa select
+                        hdvSelect.disabled = false;
+                        taixeSelect.disabled = false;
+
+                        // Cập nhật Select HDV
+                        updateSelect(hdvSelect, data.hdv, "Hướng Dẫn Viên");
+
+                        // Cập nhật Select Tài xế
+                        updateSelect(taixeSelect, data.taixe, "Tài Xế");
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        hdvLoading.style.display = 'none';
+                        alert('Có lỗi khi kiểm tra lịch nhân sự.');
+                    });
+            }
+
+            function updateSelect(selectElement, listData, roleName) {
+                selectElement.innerHTML = `<option value="">-- Chọn ${roleName} --</option>`;
+
+                listData.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+
+                    if (item.is_busy) {
+                        option.text = `${item.ho_ten} (Đang bận lịch khác)`;
+                        option.disabled = true; // Không cho chọn
+                        option.style.color = '#dc3545'; // Màu đỏ
+                    } else {
+                        option.text = `${item.ho_ten} (${item.sdt})`;
+                        option.style.color = '#198754'; // Màu xanh
+                    }
+                    selectElement.appendChild(option);
+                });
+            }
+
+            document.getElementById('ngay_khoi_hanh').addEventListener('change', handleDateChange);
+            tourSelect.addEventListener('change', handleDateChange);
         });
     </script>
 </body>

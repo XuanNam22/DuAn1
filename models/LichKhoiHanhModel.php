@@ -362,4 +362,40 @@ class LichKhoiHanhModel extends BaseModel
         $stmt->execute(['id' => $staffId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    public function getAllStaffWithStatus($role, $startDate, $endDate)
+    {
+        $sqlAll = "SELECT id, ho_ten, sdt, phan_loai_nhan_su 
+                   FROM huong_dan_vien 
+                   WHERE phan_loai_nhan_su = :role 
+                   AND trang_thai IN ('SanSang', 'DangBan')
+                   ORDER BY ho_ten ASC";
+        
+        $stmtAll = $this->conn->prepare($sqlAll);
+        $stmtAll->execute(['role' => $role]);
+        $allStaff = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+        $sqlBusy = "SELECT DISTINCT lnv.nhan_vien_id 
+                    FROM lich_nhan_vien lnv
+                    JOIN lich_khoi_hanh lkh ON lnv.lich_khoi_hanh_id = lkh.id
+                    WHERE lkh.trang_thai != 'Huy'
+                    AND (
+                        lkh.ngay_khoi_hanh <= :end_date 
+                        AND lkh.ngay_ket_thuc >= :start_date
+                    )";
+        
+        $stmtBusy = $this->conn->prepare($sqlBusy);
+        $stmtBusy->execute([
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+    
+        $busyIds = $stmtBusy->fetchAll(PDO::FETCH_COLUMN);
+
+        $result = [];
+        foreach ($allStaff as $staff) {
+            $staff['is_busy'] = in_array($staff['id'], $busyIds);
+            $result[] = $staff;
+        }
+
+        return $result;
+    }
 }

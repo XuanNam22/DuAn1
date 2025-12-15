@@ -54,6 +54,7 @@ match ($action) {
     'admin-tour-update' => (new TourController)->update(),
     'admin-tour-delete' => (new TourController)->delete(),
     'admin-tour-delete-image' => (new TourController)->deleteGalleryImage(),
+    'api-check-availability' => (new TourController)->checkAvailabilityApi(),
 
     // Routes Quản Lý HDV
     'admin-guides'       => (new GuideManagerController)->index(),
@@ -62,7 +63,6 @@ match ($action) {
     'admin-guide-edit'   => (new GuideManagerController)->edit(),
     'admin-guide-update' => (new GuideManagerController)->update(),
     'admin-guide-delete' => (new GuideManagerController)->delete(),
-    'admin-guide-restore'=> (new GuideManagerController)->restore(), 
     'admin-guide-detail' => (new GuideManagerController)->detail(),
 
     // Routes Quản Lý Nhà Cung Cấp

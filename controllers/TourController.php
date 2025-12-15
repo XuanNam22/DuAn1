@@ -52,14 +52,12 @@ class TourController extends BaseController
         ];
 
         try {
-            $this->tourModel->conn->beginTransaction(); // Bắt đầu giao dịch
+            $this->tourModel->conn->beginTransaction(); 
 
-            // Insert Tour
             $tourId = $this->tourModel->insertAndGetId($data);
 
             if (!$tourId) throw new Exception("Lỗi khi tạo Tour");
 
-            // Insert Lịch trình
             if (isset($_POST['itinerary_title'])) {
                 foreach ($_POST['itinerary_title'] as $key => $title) {
                     if (!empty($title)) {
@@ -70,7 +68,6 @@ class TourController extends BaseController
                 }
             }
 
-            // Insert Album ảnh
             if (isset($_FILES['gallery']['name'][0]) && !empty($_FILES['gallery']['name'][0])) {
                 $totalFiles = count($_FILES['gallery']['name']);
                 for ($i = 0; $i < $totalFiles; $i++) {
@@ -88,7 +85,6 @@ class TourController extends BaseController
                 }
             }
 
-            // Insert NCC
             if (isset($_POST['suppliers'])) {
                 foreach ($_POST['suppliers'] as $nccId) {
                     $note = $_POST['suppliers_note'][$nccId] ?? '';
@@ -96,11 +92,10 @@ class TourController extends BaseController
                 }
             }
 
-            $this->tourModel->conn->commit(); // Lưu tất cả
+            $this->tourModel->conn->commit(); 
             header('Location: index.php?action=admin-tours&msg=created');
         } catch (Exception $e) {
-            $this->tourModel->conn->rollBack(); // Hoàn tác nếu lỗi
-            // Nếu đã lỡ upload ảnh đại diện thì xóa đi cho sạch
+            $this->tourModel->conn->rollBack(); 
             if ($anh_tour && file_exists("assets/uploads/" . $anh_tour)) {
                 unlink("assets/uploads/" . $anh_tour);
             }
@@ -290,6 +285,9 @@ class TourController extends BaseController
                 'hdv_id' => $_POST['hdv_id'] ?? null,
                 'ghi_chu_nhan_su' => $_POST['ghi_chu_nhan_su'] ?? ''
             ];
+
+            $taixe_id = $_POST['taixe_id'] ?? null;
+
             if (!empty($data['hdv_id'])) {
                 $busyTour = $this->lichModel->checkStaffAvailability(
                     $data['hdv_id'],
@@ -302,7 +300,25 @@ class TourController extends BaseController
                     $start = date('d/m H:i', strtotime($busyTour['ngay_khoi_hanh']));
                     $end = date('d/m H:i', strtotime($busyTour['ngay_ket_thuc']));
 
-                    $errorMsg = "Nhân sự được chọn có lịch đi: \"$tenTour\" trong thời gian thời gian: ($start - $end).";
+                    $errorMsg = "HDV được chọn đang bận đi tour: \"$tenTour\" ($start - $end).";
+                    header('Location: index.php?action=admin-create-lich&error=' . urlencode($errorMsg));
+                    return;
+                }
+            }
+
+            if (!empty($taixe_id)) {
+                $busyDriver = $this->lichModel->checkStaffAvailability(
+                    $taixe_id,
+                    $data['ngay_khoi_hanh'],
+                    $data['ngay_ket_thuc']
+                );
+
+                if ($busyDriver) {
+                    $tenTour = $busyDriver['ten_tour'];
+                    $start = date('d/m H:i', strtotime($busyDriver['ngay_khoi_hanh']));
+                    $end = date('d/m H:i', strtotime($busyDriver['ngay_ket_thuc']));
+
+                    $errorMsg = "Tài xế được chọn đang bận đi tour: \"$tenTour\" ($start - $end).";
                     header('Location: index.php?action=admin-create-lich&error=' . urlencode($errorMsg));
                     return;
                 }
@@ -310,10 +326,16 @@ class TourController extends BaseController
 
             try {
                 $this->lichModel->conn->beginTransaction();
+
                 $lichId = $this->lichModel->insert($data);
+                
                 if ($lichId) {
                     if (!empty($data['hdv_id'])) {
                         $this->lichModel->assignStaff($lichId, $data['hdv_id'], 'HDV_chinh');
+                    }
+
+                    if (!empty($taixe_id)) {
+                        $this->lichModel->assignStaff($lichId, $taixe_id, 'TaiXe');
                     }
                 }
 
@@ -358,13 +380,11 @@ class TourController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];
 
-            // 1. Lấy thông tin hiện tại trong DB để check ràng buộc
             $currentLich = $this->lichModel->getDetail($id);
             if (!$currentLich) {
                 die("Lỗi: Không tìm thấy lịch trình!");
             }
 
-            // 2. Validate số chỗ: Không được giảm thấp hơn số đã đặt
             $soChoMoi = $_POST['so_cho_toi_da'];
             $soChoDaDat = $currentLich['so_cho_da_dat'];
 
@@ -373,9 +393,6 @@ class TourController extends BaseController
                 header("Location: index.php?action=admin-schedule-staff&id=$id&error=" . urlencode($errorMsg));
                 return;
             }
-
-            // 3. Xử lý thời gian: Giữ nguyên NGÀY cũ, chỉ cập nhật GIỜ mới
-            // Lấy phần ngày (Y-m-d) từ dữ liệu cũ
             $oldStartDate = date('Y-m-d', strtotime($currentLich['ngay_khoi_hanh']));
             $oldEndDate = date('Y-m-d', strtotime($currentLich['ngay_ket_thuc']));
 
@@ -515,5 +532,25 @@ class TourController extends BaseController
             'bookings' => $bookings,
             'passengers' => $passengers
         ]);
+    }
+
+    public function checkAvailabilityApi()
+    {
+        $ngay_di = $_POST['ngay_di'] ?? '';
+        $ngay_ve = $_POST['ngay_ve'] ?? '';
+
+        if (empty($ngay_di) || empty($ngay_ve)) {
+            echo json_encode(['hdv' => [], 'taixe' => []]);
+            exit;
+        }
+        $ds_hdv = $this->lichModel->getAllStaffWithStatus('HDV', $ngay_di, $ngay_ve);
+        $ds_taixe = $this->lichModel->getAllStaffWithStatus('TaiXe', $ngay_di, $ngay_ve);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'hdv' => $ds_hdv,
+            'taixe' => $ds_taixe
+        ]);
+        exit;
     }
 }
