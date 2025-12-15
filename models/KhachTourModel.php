@@ -22,7 +22,6 @@ class KhachTourModel extends BaseModel {
         return $stmt->fetchAll();
     }
 
-    // Cập nhật trạng thái điểm danh
     public function updateStatus($idKhach, $status) {
         $sql = "UPDATE khach_tour SET trang_thai_diem_danh = :status WHERE id = :id";
         $stmt = $this->conn->prepare($sql);

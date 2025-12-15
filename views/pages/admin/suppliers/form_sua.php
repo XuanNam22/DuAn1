@@ -27,7 +27,6 @@
                             <label class="form-label fw-bold">Loại Dịch Vụ</label>
                             <input type="text" name="dich_vu" class="form-control" value="<?= htmlspecialchars($supplier['dich_vu']) ?>" required>
                         </div>
-
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Số Điện Thoại</label>

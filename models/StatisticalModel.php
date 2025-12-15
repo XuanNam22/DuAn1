@@ -51,7 +51,6 @@ class StatisticalModel extends BaseModel {
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
     // Thống kê tổng quát (dùng cho các thẻ bài trên cùng báo cáo)
     public function getOverallStats($fromDate, $toDate) {
         $sql = "

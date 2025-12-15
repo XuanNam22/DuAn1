@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css">
 </head>
-
 <body class="bg-light">
     <?php if (isset($_GET['error'])): ?>
         <div class="alert alert-danger alert-dismissible fade show shadow-sm border-danger" role="alert">

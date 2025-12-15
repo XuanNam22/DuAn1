@@ -3,7 +3,6 @@ class GuideManagerController extends BaseController
 {
 
     private $guideModel;
-
     public function __construct()
     {
         $this->guideModel = new GuideModel();

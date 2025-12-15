@@ -40,7 +40,6 @@
                     
                     </div>
             </div>
-
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
                     <h6 class="mb-0"><i class="fas fa-users"></i> Danh sách thành viên đoàn</h6>

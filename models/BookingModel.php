@@ -1,7 +1,6 @@
 <?php
 class BookingModel extends BaseModel {
     
-    // 1. Lấy danh sách booking (Có hỗ trợ bộ lọc)
    public function getAllBookings($filters = []) {
         $sql = "SELECT b.*, t.ten_tour, lkh.ngay_khoi_hanh 
                 FROM bookings b

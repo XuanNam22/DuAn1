@@ -20,7 +20,6 @@
                             <label class="form-label fw-bold">Tên Nhà Cung Cấp <span class="text-danger">*</span></label>
                             <input type="text" name="ten_ncc" class="form-control" required placeholder="Ví dụ: Khách sạn Mường Thanh, Xe du lịch ABC...">
                         </div>
-                        
                         <div class="mb-3">
                             <label class="form-label fw-bold">Loại Dịch Vụ <span class="text-danger">*</span></label>
                             <select name="dich_vu" class="form-select" required>

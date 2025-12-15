@@ -97,7 +97,6 @@ match ($action) {
     'hdv-update-khach-note' => (new HdvController)->updateYeuCauDacBiet(),
 
     'admin-lich-detail' => (new TourController)->detailLich(),
-
     default             => (new AuthController)->showLoginForm(),
 };
 ?>

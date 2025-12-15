@@ -18,9 +18,7 @@
         #btn-back-to-top { position: fixed; bottom: 20px; right: 20px; display: none; z-index: 1000; }
     </style>
 </head>
-
 <body class="bg-light">
-
     <nav class="navbar navbar-dark bg-success mb-4 sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand text-truncate" style="max-width: 70%;" href="<?= BASE_URL ?>routes/index.php?action=hdv-dashboard">

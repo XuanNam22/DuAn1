@@ -25,7 +25,6 @@
                         <label class="form-label fw-bold">Nội dung</label>
                          <textarea class="form-control" name="noi_dung" rows="5" required><?= htmlspecialchars($log['noi_dung'] ?? '') ?></textarea>
                     </div>
-
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">Sự cố (nếu có)</label>

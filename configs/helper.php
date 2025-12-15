@@ -15,4 +15,5 @@ if (!function_exists('currency_format')) {
         return number_format($number, 0, ',', '.') . $suffix;
     }
 }
+
 ?>

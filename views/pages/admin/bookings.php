@@ -17,7 +17,6 @@
         }
     </style>
 </head>
-
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
         <div class="container">

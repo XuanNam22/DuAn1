@@ -8,7 +8,6 @@ class StatisticalController extends BaseController
         // Khởi tạo Model
         $this->statisticalModel = new StatisticalModel();
     }
-
     public function index()
     {
         // 1. Xử lý thời gian lọc:

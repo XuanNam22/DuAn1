@@ -3,7 +3,6 @@ class HdvController extends BaseController
 {
     private $nhatKyModel;
     private $diemDanhModel;
-
     public function __construct(){
         $this->nhatKyModel = new NhatKyTourModel();
         $this->diemDanhModel = new DiemDanhModel();

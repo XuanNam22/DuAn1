@@ -1,7 +1,6 @@
 <?php
 class SupplierController extends BaseController {
     private $model;
-
     public function __construct() {
         $this->model = new SupplierModel();
     }

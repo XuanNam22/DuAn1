@@ -1,7 +1,6 @@
 <?php
 class SupplierModel extends BaseModel {
     
-    // Lấy danh sách tất cả
     public function getAll() {
         $stmt = $this->conn->prepare("SELECT * FROM nha_cung_cap ORDER BY id DESC");
         $stmt->execute();

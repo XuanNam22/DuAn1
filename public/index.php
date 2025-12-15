@@ -14,7 +14,6 @@ define('ROUTE_PATH', ROOT_PATH . '/routes');
 // BẮT ĐẦU PHIÊN (Session)
 session_start();
 
-
 // BƯỚC 2: TẢI CÁC FILE CẦN THIẾT (ĐÃ SỬA LẠI THỨ TỰ)
 // -------------------------------------------------------------
 

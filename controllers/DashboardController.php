@@ -30,7 +30,6 @@ class DashboardController extends BaseController
                     $tour['trang_thai'] = 'KhongNhanThemKhach';
                 }
             }
-            
             if ($tour['trang_thai'] === 'KhongNhanThemKhach' && $currentTime >= $startTime && $currentTime <= $endTime) {
                 $lichModel->updateStatus($tour['id'], 'DangDi');
                 $tour['trang_thai'] = 'DangDi';

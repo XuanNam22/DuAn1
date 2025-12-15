@@ -325,7 +325,6 @@ class LichKhoiHanhModel extends BaseModel
                 )
             )";
 
-        // [THÊM] Nếu có truyền vai trò vào thì lọc thêm vai trò đó
         if ($role) {
             $sql .= " AND phan_loai_nhan_su = :role";
         }

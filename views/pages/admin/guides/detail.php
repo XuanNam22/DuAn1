@@ -11,7 +11,6 @@
         <h3 class="text-primary fw-bold">Hồ Sơ Nhân Sự</h3>
         <a href="<?= BASE_URL ?>routes/index.php?action=admin-guides" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Quay lại</a>
     </div>
-
     <div class="row">
         <div class="col-md-4">
             <div class="card shadow-sm text-center p-3 mb-3">

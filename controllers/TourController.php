@@ -5,7 +5,6 @@ class TourController extends BaseController
     private $supplierModel;
     private $lichModel;
     private $guideModel;
-
     public function __construct()
     {
         $this->tourModel = new TourModel();

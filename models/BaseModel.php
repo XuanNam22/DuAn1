@@ -1,7 +1,6 @@
 <?php
 class BaseModel {
     public $conn;
-
     public function __construct() {
         try {
             $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;

@@ -19,7 +19,6 @@ if (!empty($myTours)) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>

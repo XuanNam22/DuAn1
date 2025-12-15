@@ -17,7 +17,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
-
     <div class="card shadow-sm mb-4 border-top border-4 border-primary">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">

@@ -6,7 +6,6 @@ class GuideModel extends BaseModel
         $sql = "SELECT * FROM huong_dan_vien WHERE 1=1";
         $params = [];
 
-        // 1. Lọc theo từ khóa (Tên, Email, SĐT)
         if (!empty($filters['keyword'])) {
             $sql .= " AND (ho_ten LIKE :kw OR email LIKE :kw OR sdt LIKE :kw)";
             $params['kw'] = '%' . $filters['keyword'] . '%';

@@ -1,7 +1,6 @@
 <?php
 class TourModel extends BaseModel {
     
-    // 1. Lấy danh sách tour
     public function getAll() {
         $sql = "SELECT t.*, lt.ten_loai 
                 FROM tours t

@@ -10,7 +10,6 @@ class AuthController extends BaseController
         }
         $this->render('auth/login');
     }
-
     public function handleLogin()
     {
         $email = trim($_POST['email'] ?? '');

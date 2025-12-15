@@ -58,7 +58,6 @@ class NhatKyTourModel extends BaseModel
         return $stmt->execute($data);
     }
 
-    // [MỚI] Xóa nhật ký
     public function deleteNhatKy($id)
     {
         $sql = "DELETE FROM {$this->tableName} WHERE id = :id";

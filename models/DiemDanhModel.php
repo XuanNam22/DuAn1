@@ -4,7 +4,6 @@ class DiemDanhModel extends BaseModel
     // 1. Lấy danh sách các phiên của 1 lịch trình
     public function getPhienByLich($lichId)
     {
-        // Sửa câu SQL để đếm số người
         $sql = "SELECT p.*, 
                        COUNT(ct.khach_id) as tong_so,
                        SUM(CASE WHEN ct.trang_thai = 1 THEN 1 ELSE 0 END) as co_mat

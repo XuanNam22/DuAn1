@@ -20,7 +20,6 @@
             </span>
         </div>
     </nav>
-
     <div class="container">
         <?php if(isset($_GET['status']) && $_GET['status'] == 'locked_error'): ?>
             <div class="alert alert-danger alert-dismissible fade show">

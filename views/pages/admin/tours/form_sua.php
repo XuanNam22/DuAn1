@@ -15,7 +15,6 @@
             <i class="bi bi-arrow-left"></i> Quay lại danh sách
         </a>
     </div>
-
     <div class="card shadow-sm">
         <div class="card-body p-4">
             <form action="index.php?action=admin-tour-update" method="POST" enctype="multipart/form-data">

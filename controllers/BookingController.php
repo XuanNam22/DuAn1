@@ -6,7 +6,6 @@ class BookingController extends BaseController {
             header('Location: ' . BASE_URL . 'routes/index.php?action=login');
             exit;
         }
-
         $filters = [
             'keyword' => $_GET['keyword'] ?? '',
             'status'  => $_GET['status'] ?? '',

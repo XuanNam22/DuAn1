@@ -20,7 +20,6 @@
             </a>
         </div>
     </div>
-
     <?php if(isset($_GET['msg'])): ?>
         <div class="alert alert-success alert-dismissible fade show">
             <?php 
